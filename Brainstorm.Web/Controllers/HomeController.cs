@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Brainstorm.Web.Models;
-using Microsoft.Extensions.Logging;
+using Brainstorm.Web.Models;    
 
 namespace Brainstorm.Web.Controllers;
 
