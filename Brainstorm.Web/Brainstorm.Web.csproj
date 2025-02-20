@@ -10,4 +10,8 @@
       <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Include="wwwroot\js\canvas.js" />
+    </ItemGroup>
+
 </Project>

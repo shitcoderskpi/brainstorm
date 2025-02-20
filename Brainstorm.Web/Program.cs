@@ -1,5 +1,7 @@
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddControllersWithViews();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -21,7 +23,7 @@ app.Map("/ws", async context =>
     {
         var webSocket = await context.WebSockets.AcceptWebSocketAsync();
         var handler = new WebSocketHandler();
-        await handler.Handle(context, webSocket);
+        await handler.Handle(context, webSocket);   
     }
     else
     {
@@ -33,5 +35,5 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Canvas}/{id?}");
 app.Run();

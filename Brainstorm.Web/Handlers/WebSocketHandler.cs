@@ -1,6 +1,5 @@
 using System.Net.WebSockets;
 using System.Text;
-using Microsoft.AspNetCore.Mvc;
 
 public class WebSocketHandler
 {
@@ -9,7 +8,7 @@ public class WebSocketHandler
     public async Task Handle(HttpContext context, WebSocket socket)
     {
         _clients.Add(socket);
-        var buffer = new byte[1024 * 1024];
+        var buffer = new byte[1024 * 8];
 
         while (socket.State == WebSocketState.Open)
         {
