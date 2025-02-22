@@ -1,5 +1,8 @@
 const canvas = document.getElementById("glcanvas");
 const socket = new WebSocket("wss://dehobitto.xyz/ws");
+//const socket = new WebSocket("wss://localhost:7042/ws");
+
+
 
 
 
@@ -88,7 +91,9 @@ canvas.addEventListener("mouseup", (event)=>
 
 socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
+    console.log(data);
     lines.push(data); // Добавляем в буфер
+    draw();
 };
 
 // Настраиваем WebGL
