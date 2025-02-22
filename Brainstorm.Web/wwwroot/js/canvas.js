@@ -1,129 +1,96 @@
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+const canvas = document.getElementById("glcanvas");
 const socket = new WebSocket("wss://dehobitto.xyz/ws");
 
-let drawing = false, moving = false;
-let lastX = 0, lastY = 0;
-let scale = 1, offsetX = 0, offsetY = 0;
-let lines = [];
-let incomingLines = []; // Буфер входящих линий
 
-ready(initCanvas())
 
-function ready(fn){
-    if (document.readyState === "complete"){
-        fn();
-    } else
-    {
-        document.addEventListener("DOMContentLoaded", fn);
-    }
+canvas.width = window.innerWidth / 100 * 98;
+canvas.height = window.innerHeight / 100 * 95;
+
+const gl = canvas.getContext("webgl");
+
+
+if (!gl) {
+    
+    alert("WebGL не поддерживается!");
 }
 
-function initCanvas() {
-    const { innerWidth, innerHeight } = window;
-    canvas.setAttribute('width', innerWidth);
-    canvas.setAttribute('height', innerHeight);
+// Вершинный шейдер (принимает координаты)
+const vertexShaderSource = `
+            attribute vec2 a_position;
+            void main() {
+                gl_PointSize = 5.0;
+                gl_Position = vec4(a_position, 0, 1);
+            }
+        `;
+
+// Фрагментный шейдер (цвет пикселей)
+const fragmentShaderSource = `
+            precision mediump float;
+            void main() {
+                gl_FragColor = vec4(0, 0, 0, 1); // Красный цвет
+            }
+        `;
+
+function createShader(gl, type, source) {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    return shader;
 }
 
+const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
 
-// 🎨 Получение координат в масштабе
-function getCanvasCoords(event) {
-    const rect = canvas.getBoundingClientRect();
-    return {
-        x: (event.clientX - rect.left - offsetX) / scale,
-        y: (event.clientY - rect.top - offsetY) / scale
-    };
-}
+const program = gl.createProgram();
+gl.attachShader(program, vertexShader);
+gl.attachShader(program, fragmentShader);
+gl.linkProgram(program);
+gl.useProgram(program);
+gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE)
 
-// 🎨 Рисование линии
-function drawLine(x1, y1, x2, y2) {
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.stroke();
-}
-
-// 🔄 Отрисовка с буферизацией
-function redrawCanvas() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.save();
-    ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
-
-    // Отрисовываем линии
-    lines.forEach(line => drawLine(line.fromX, line.fromY, line.toX, line.toY));
-    ctx.restore();
-}
-
-// 🕒 Оптимизация рендеринга (30 FPS)
-function processIncoming() {
-    if (incomingLines.length > 0) {
-        lines.push(...incomingLines);
-        incomingLines = []; // Очищаем буфер
-        redrawCanvas();
-    }
-    requestAnimationFrame(processIncoming);
-}
-requestAnimationFrame(processIncoming); // Запускаем рендер
-
-// 🎨 Мышь
-canvas.addEventListener("mousedown", (event) => {
-    if (event.button === 0) { // Левая кнопка — рисование
-        drawing = true;
-        const coords = getCanvasCoords(event);
-        lastX = coords.x;
-        lastY = coords.y;
-    } else if (event.button === 1) { // Средняя кнопка — перемещение
-        moving = true;
-        lastX = event.clientX;
-        lastY = event.clientY;
-        event.preventDefault();
-    }
-});
+// Ловим координаты кликов
+const lines = [];
+let line = [];
 
 canvas.addEventListener("mousemove", (event) => {
-    if (drawing) {
-        const coords = getCanvasCoords(event);
-        const data = { fromX: lastX, fromY: lastY, toX: coords.x, toY: coords.y };
+    if (event.buttons !== 1) return; // Проверяем, нажата ли ЛКМ
 
-        //socket.send(JSON.stringify(data));
-        lines.push(data); // Локальное рисование
-        redrawCanvas(); // 🔥 ВАЖНО: добавил перерисовку после локального рисования
-
-        lastX = coords.x;
-        lastY = coords.y;
-    } else if (moving) { // Двигаем канвас
-        offsetX += event.clientX - lastX;
-        offsetY += event.clientY - lastY;
-        lastX = event.clientX;
-        lastY = event.clientY;
-        redrawCanvas();
-    }
+    const rect = canvas.getBoundingClientRect();
+    const x = (event.clientX - rect.left - 5) / canvas.width * 2 - 1;
+    const y = (rect.top - event.clientY + 5) / canvas.height * 2 + 1;
+    
+    line.push(x, y);
+    lines.push(line);
+    
+    socket.send(JSON.stringify(line));
+    
+    draw();
 });
 
-canvas.addEventListener("mouseup", () => { drawing = false; moving = false; });
-canvas.addEventListener("mouseleave", () => { drawing = false; moving = false; });
-
-// 🔄 Масштабирование (ZOOM)
-canvas.addEventListener("wheel", (event) => {
-    event.preventDefault();
-    const zoomFactor = 1.1;
-    const mouseX = event.offsetX, mouseY = event.offsetY;
-
-    if (event.deltaY < 0) {
-        scale *= zoomFactor;
-        offsetX = mouseX - (mouseX - offsetX) * zoomFactor;
-        offsetY = mouseY - (mouseY - offsetY) * zoomFactor;
-    } else {
-        scale /= zoomFactor;
-        offsetX = mouseX - (mouseX - offsetX) / zoomFactor;
-        offsetY = mouseY - (mouseY - offsetY) / zoomFactor;
+function draw() {
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    
+    for (let i = 0; i < lines.length; i++) {
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lines[i]), gl.STATIC_DRAW);
+        const positionLocation = gl.getAttribLocation(program, "a_position");
+        gl.enableVertexAttribArray(positionLocation);
+        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+        gl.drawArrays(gl.LINE_STRIP, 0, lines[i].length / 2);
     }
+}
 
-    redrawCanvas();
+canvas.addEventListener("mouseup", (event)=>
+{
+    lines.push(line);
+    line = [];
 });
 
-// 📡 Приём данных с WebSocket
 socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
-    incomingLines.push(data); // Добавляем в буфер
+    lines.push(data); // Добавляем в буфер
 };
+
+// Настраиваем WebGL
+gl.clearColor(1, 1, 1, 1);
+gl.clear(gl.COLOR_BUFFER_BIT);

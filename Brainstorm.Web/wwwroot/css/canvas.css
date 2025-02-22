@@ -1,4 +1,10 @@
-#canvas {
-    position: absolute !important;
-    border: 1px solid black; 
+#glcanvas {
+    position: absolute !important; top: 0; left: 0;
+    z-index: -1;
+    margin: 0.8vw;
+    border-left: black solid 0.35vw;
+    border-right: black solid 0.35vw;
+    border-top: black solid 0.35vw;
+    border-bottom: black solid 0.35vw;
+    border-radius: 0.8vw;
 }
