@@ -1,4 +1,15 @@
+using Brainstorm.Web.Handlers;
+using Microsoft.Extensions.Logging.Console;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.AddSimpleConsole(options =>
+{
+    options.IncludeScopes = true;
+    options.SingleLine = false;
+    options.TimestampFormat = "[hh:mm:ss.fff] ";
+    options.ColorBehavior = LoggerColorBehavior.Default;
+});
 
 builder.Services.AddControllersWithViews();
 
@@ -23,7 +34,7 @@ app.Map("/ws", async context =>
     {
         var webSocket = await context.WebSockets.AcceptWebSocketAsync();
         var handler = new WebSocketHandler();
-        await handler.Handle(context, webSocket);   
+        await handler.Handle(context, webSocket);
     }
     else
     {

@@ -1,6 +1,6 @@
 const canvas = document.getElementById("glcanvas");
-const socket = new WebSocket("wss://dehobitto.xyz/ws");
-//const socket = new WebSocket("wss://localhost:7042/ws");
+//const socket = new WebSocket("wss://dehobitto.xyz/ws");
+const socket = new WebSocket("ws://localhost:5057/ws");
 
 
 
@@ -28,7 +28,7 @@ const vertexShaderSource = `
 
 // Фрагментный шейдер (цвет пикселей)
 const fragmentShaderSource = `
-            precision mediump float;
+            precision medium float;
             void main() {
                 gl_FragColor = vec4(0, 0, 0, 1); // Красный цвет
             }
