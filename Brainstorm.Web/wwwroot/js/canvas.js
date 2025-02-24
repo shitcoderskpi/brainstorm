@@ -1,5 +1,5 @@
 const canvas = document.getElementById("glcanvas");
-const socket = new WebSocket("wss://localhost:7042/ws");
+const socket = new WebSocket("wss://dehobitto.xyz/ws");
 
 canvas.width = window.innerWidth * 0.98;
 canvas.height = window.innerHeight * 0.95;
@@ -63,40 +63,46 @@ canvas.addEventListener("mousedown", () => {
     isDrawing = true;
 });
 
+canvas.addEventListener("mouseleave", (e) => {
+    if (currentLine.length !== 0) {
+        lines.push(currentLine); // Сохраняем копию
+    }
+    currentLine = [];
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, oldLinesBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lines.flat().length), gl.STATIC_DRAW);
+    drawAllLines();
+});
+
 // 🎨 Движение мыши (отрисовка только новой линии)
 canvas.addEventListener("mousemove", (event) => {
     if (!isDrawing) return;
-
-    const [nx, ny] = normalizeCoordinates(event.clientX, event.clientY);
-    currentLine.push(nx, ny);
-
+    [x, y] = normalizeCoordinates(event.clientX, event.clientY);
+    
+    currentLine.push(x, y);
     requestAnimationFrame(drawCurrentLine);
 });
 canvas.addEventListener("mouseup", () => {
-    if (currentLine.length > 0) {
+    if (currentLine.length !== 0) {
         lines.push(currentLine); // Сохраняем копию
     }
     currentLine = [];
     isDrawing = false;
 
     gl.bindBuffer(gl.ARRAY_BUFFER, oldLinesBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lines.flat()), gl.STATIC_DRAW);
-
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lines.flat().length), gl.STATIC_DRAW);
     drawAllLines();
 });
 function drawAllLines() {
     gl.clear(gl.COLOR_BUFFER_BIT);
-    
     gl.bindBuffer(gl.ARRAY_BUFFER, oldLinesBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lines.flat()), gl.STATIC_DRAW);
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
     for (let i = 0; i < lines.length; i++) {
-        console.log(lines[i]);
-        gl.drawArrays(gl.LINE_STRIP, 0, lines[i].length / 2);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lines[i]), gl.STATIC_DRAW);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, lines[i].length / 2);
     }
 }
 
-// 🎨 Отрисовка текущей линии поверх фона (ОБНОВЛЯЕТСЯ каждый кадр)
 function drawCurrentLine() {
     drawAllLines(); // Сначала рисуем фон + старые линии
 
@@ -104,7 +110,7 @@ function drawCurrentLine() {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(currentLine), gl.STREAM_DRAW);
 
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-    gl.drawArrays(gl.LINE_STRIP, 0, currentLine.length / 2);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, currentLine.length / 2);
 }
 
 // 📡 Обработчик WebSocket
@@ -115,5 +121,5 @@ socket.onmessage = (event) => {
     gl.bindBuffer(gl.ARRAY_BUFFER, oldLinesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lines.flat()), gl.STATIC_DRAW);
 
-    drawAllLines();
+    requestAnimationFrame(drawAllLines);
 };
