@@ -1,33 +1,25 @@
 const canvas = document.getElementById("glcanvas");
-//const socket = new WebSocket("wss://dehobitto.xyz/ws");
 const socket = new WebSocket("wss://localhost:7042/ws");
 
-canvas.width = window.innerWidth / 100 * 98;
-canvas.height = window.innerHeight / 100 * 95;
+canvas.width = window.innerWidth * 0.98;
+canvas.height = window.innerHeight * 0.95;
 
 const gl = canvas.getContext("webgl");
+if (!gl) alert("WebGL не поддерживается!");
 
-if (!gl) {
-    
-    alert("WebGL не поддерживается!");
-}
-
-// Вершинный шейдер (принимает координаты)
 const vertexShaderSource = `
-            attribute vec2 a_position;
-            void main() {
-                gl_PointSize = 5.0;
-                gl_Position = vec4(a_position, 0, 1);
-            }
-        `;
+    attribute vec2 a_position;
+    void main() {
+        gl_Position = vec4(a_position, 0, 1);
+    }
+`;
 
-// Фрагментный шейдер (цвет пикселей)
 const fragmentShaderSource = `
-            precision mediump float;
-            void main() {
-                gl_FragColor = vec4(0, 0, 0, 1); // Красный цвет
-            }
-        `;
+    precision mediump float;
+    void main() {
+        gl_FragColor = vec4(0, 0, 0, 1);
+    }
+`;
 
 function createShader(gl, type, source) {
     const shader = gl.createShader(type);
@@ -44,53 +36,84 @@ gl.attachShader(program, vertexShader);
 gl.attachShader(program, fragmentShader);
 gl.linkProgram(program);
 gl.useProgram(program);
-gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE)
 
-// Ловим координаты кликов
-const lines = [];
-let line = [];
+const positionLocation = gl.getAttribLocation(program, "a_position");
+gl.enableVertexAttribArray(positionLocation);
+gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-canvas.addEventListener("mousemove", (event) => {
-    if (event.buttons !== 1) return; // Проверяем, нажата ли ЛКМ
+const oldLinesBuffer = gl.createBuffer();
+const currentLineBuffer = gl.createBuffer();
 
+let lines = [];         // Хранит старые линии (не обновляется каждый кадр)
+let currentLine = [];   // Хранит текущую линию (обновляется на каждом движении)
+let isDrawing = false;
+
+function normalizeCoordinates(x, y) {
     const rect = canvas.getBoundingClientRect();
-    const x = (event.clientX - rect.left - 5) / canvas.width * 2 - 1;
-    const y = (rect.top - event.clientY + 5) / canvas.height * 2 + 1;
-    
-    line.push(x, y);
-    lines.push(line);
-    
-    socket.send(JSON.stringify(line));
-    
-    draw();
+    return [
+        (x - rect.left) / canvas.width * 2 - 1,
+        -((y - rect.top) / canvas.height * 2 - 1)
+    ];
+}
+
+gl.clearColor(1, 1, 1, 1);
+gl.clear(gl.COLOR_BUFFER_BIT);
+
+canvas.addEventListener("mousedown", () => {
+    isDrawing = true;
 });
 
-function draw() {
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+// 🎨 Движение мыши (отрисовка только новой линии)
+canvas.addEventListener("mousemove", (event) => {
+    if (!isDrawing) return;
+
+    const [nx, ny] = normalizeCoordinates(event.clientX, event.clientY);
+    currentLine.push(nx, ny);
+
+    requestAnimationFrame(drawCurrentLine);
+});
+canvas.addEventListener("mouseup", () => {
+    if (currentLine.length > 0) {
+        lines.push(currentLine); // Сохраняем копию
+    }
+    currentLine = [];
+    isDrawing = false;
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, oldLinesBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lines.flat()), gl.STATIC_DRAW);
+
+    drawAllLines();
+});
+function drawAllLines() {
+    gl.clear(gl.COLOR_BUFFER_BIT);
     
+    gl.bindBuffer(gl.ARRAY_BUFFER, oldLinesBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lines.flat()), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
     for (let i = 0; i < lines.length; i++) {
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lines[i]), gl.STATIC_DRAW);
-        const positionLocation = gl.getAttribLocation(program, "a_position");
-        gl.enableVertexAttribArray(positionLocation);
-        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+        console.log(lines[i]);
         gl.drawArrays(gl.LINE_STRIP, 0, lines[i].length / 2);
     }
 }
 
-canvas.addEventListener("mouseup", (event)=>
-{
-    lines.push(line);
-    line = [];
-});
+// 🎨 Отрисовка текущей линии поверх фона (ОБНОВЛЯЕТСЯ каждый кадр)
+function drawCurrentLine() {
+    drawAllLines(); // Сначала рисуем фон + старые линии
 
+    gl.bindBuffer(gl.ARRAY_BUFFER, currentLineBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(currentLine), gl.STREAM_DRAW);
+
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.LINE_STRIP, 0, currentLine.length / 2);
+}
+
+// 📡 Обработчик WebSocket
 socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
-    console.log(data);
-    lines.push(data); // Добавляем в буфер
-    draw();
-};
+    lines.push(data);
 
-// Настраиваем WebGL
-gl.clearColor(1, 1, 1, 1);
-gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.bindBuffer(gl.ARRAY_BUFFER, oldLinesBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lines.flat()), gl.STATIC_DRAW);
+
+    drawAllLines();
+};
