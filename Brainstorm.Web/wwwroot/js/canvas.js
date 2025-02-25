@@ -1,125 +1,120 @@
 const canvas = document.getElementById("glcanvas");
-const socket = new WebSocket("wss://dehobitto.xyz/ws");
+const socket = new WebSocket("wss://localhost:7042/ws");
 
 canvas.width = window.innerWidth * 0.98;
 canvas.height = window.innerHeight * 0.95;
 
-const gl = canvas.getContext("webgl");
-if (!gl) alert("WebGL не поддерживается!");
+canvas.addEventListener('mousedown', mouseDown, false);
+canvas.addEventListener('mousemove', mouseMove, false);
+canvas.addEventListener('mouseup', mouseUp, false);
+canvas.addEventListener('mouseleave', mouseUp, false);
 
-const vertexShaderSource = `
-    attribute vec2 a_position;
-    void main() {
-        gl_Position = vec4(a_position, 0, 1);
-    }
-`;
+var ctx = canvas.getContext('2d');
 
-const fragmentShaderSource = `
-    precision mediump float;
-    void main() {
-        gl_FragColor = vec4(0, 0, 0, 1);
-    }
-`;
+ctx.lineWidth = 5;
+ctx.lineJoin = 'round';
+ctx.lineCap = 'round';
 
-function createShader(gl, type, source) {
-    const shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    return shader;
-}
+var isDrawing = false;
+var lastx = 0;
+var lasty = 0;
 
-const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+// create an in-memory canvas
+var memCanvas = document.createElement('canvas');
+memCanvas.width = canvas.width;
+memCanvas.height = canvas.height;
+var memCtx = memCanvas.getContext('2d');
+var points = [];
+var lines = [];
 
-const program = gl.createProgram();
-gl.attachShader(program, vertexShader);
-gl.attachShader(program, fragmentShader);
-gl.linkProgram(program);
-gl.useProgram(program);
-
-const positionLocation = gl.getAttribLocation(program, "a_position");
-gl.enableVertexAttribArray(positionLocation);
-gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-
-const oldLinesBuffer = gl.createBuffer();
-const currentLineBuffer = gl.createBuffer();
-
-let lines = [];         // Хранит старые линии (не обновляется каждый кадр)
-let currentLine = [];   // Хранит текущую линию (обновляется на каждом движении)
-let isDrawing = false;
-
-function normalizeCoordinates(x, y) {
-    const rect = canvas.getBoundingClientRect();
-    return [
-        (x - rect.left) / canvas.width * 2 - 1,
-        -((y - rect.top) / canvas.height * 2 - 1)
-    ];
-}
-
-gl.clearColor(1, 1, 1, 1);
-gl.clear(gl.COLOR_BUFFER_BIT);
-
-canvas.addEventListener("mousedown", () => {
+function mouseDown(e) {
+    var m = getMouse(e, canvas);
+    points.push({
+        x: m.x,
+        y: m.y
+    });
     isDrawing = true;
-});
+};
 
-canvas.addEventListener("mouseleave", (e) => {
-    if (currentLine.length !== 0) {
-        lines.push(currentLine); // Сохраняем копию
+function mouseMove(e) {
+    if (isDrawing) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // put back the saved content
+        ctx.drawImage(memCanvas, 0, 0);
+        var m = getMouse(e, canvas);
+        let point = {
+            x: m.x,
+            y: m.y
+        }
+        points.push(point);
+        socket.send(JSON.stringify(point));
+        drawPoints(ctx, points);
     }
-    currentLine = [];
+};
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, oldLinesBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lines.flat().length), gl.STATIC_DRAW);
-    drawAllLines();
-});
-
-// 🎨 Движение мыши (отрисовка только новой линии)
-canvas.addEventListener("mousemove", (event) => {
-    if (!isDrawing) return;
-    [x, y] = normalizeCoordinates(event.clientX, event.clientY);
-    
-    currentLine.push(x, y);
-    requestAnimationFrame(drawCurrentLine);
-});
-canvas.addEventListener("mouseup", () => {
-    if (currentLine.length !== 0) {
-        lines.push(currentLine); // Сохраняем копию
-    }
-    currentLine = [];
-    isDrawing = false;
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, oldLinesBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lines.flat().length), gl.STATIC_DRAW);
-    drawAllLines();
-});
-function drawAllLines() {
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.bindBuffer(gl.ARRAY_BUFFER, oldLinesBuffer);
-    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-    for (let i = 0; i < lines.length; i++) {
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lines[i]), gl.STATIC_DRAW);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, lines[i].length / 2);
-    }
-}
-
-function drawCurrentLine() {
-    drawAllLines(); // Сначала рисуем фон + старые линии
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, currentLineBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(currentLine), gl.STREAM_DRAW);
-
-    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, currentLine.length / 2);
-}
-
-// 📡 Обработчик WebSocket
 socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
-    lines.push(data);
+    points.push(data);
+    drawPoints(ctx, points);
+}
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, oldLinesBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lines.flat()), gl.STATIC_DRAW);
-
-    requestAnimationFrame(drawAllLines);
+function mouseUp(e) {
+    if (isDrawing) {
+        isDrawing = false;
+        socket.send(JSON.stringify("end"));
+        // When the pen is done, save the resulting context
+        // to the in-memory canvas
+        memCtx.clearRect(0, 0, canvas.height, canvas.height);
+        memCtx.drawImage(canvas, 0, 0);
+        points = [];
+    }
 };
+
+// clear both canvases!
+function clear() {
+    context.clearRect(0, 0, 300, 300);
+    memCtx.clearRect(0, 0, 300, 300);
+};
+
+
+
+
+function drawPoints(ctx, points) {
+    // draw a basic circle instead
+    if (points.length < 6) {
+        var b = points[0];
+        ctx.beginPath(), ctx.arc(b.x, b.y, ctx.lineWidth / 2, 0, Math.PI * 2, !0), ctx.closePath(), ctx.fill();
+        return
+    }
+    ctx.beginPath(), ctx.moveTo(points[0].x, points[0].y);
+    // draw a bunch of quadratics, using the average of two points as the control point
+    for (i = 1; i < points.length - 2; i++) {
+        var c = (points[i].x + points[i + 1].x) / 2,
+            d = (points[i].y + points[i + 1].y) / 2;
+        ctx.quadraticCurveTo(points[i].x, points[i].y, c, d)
+    }
+    ctx.quadraticCurveTo(points[i].x, points[i].y, points[i + 1].x, points[i + 1].y), ctx.stroke()
+}
+
+// Creates an object with x and y defined,
+// set to the mouse position relative to the state's canvas
+// If you wanna be super-correct this can be tricky,
+// we have to worry about padding and borders
+// takes an event and a reference to the canvas
+function getMouse(e, canvas) {
+    var element = canvas, offsetX = 0, offsetY = 0, mx, my;
+
+    // Compute the total offset. It's possible to cache this if you want
+    if (element.offsetParent !== undefined) {
+        do {
+            offsetX += element.offsetLeft;
+            offsetY += element.offsetTop;
+        } while ((element = element.offsetParent));
+    }
+
+    mx = e.pageX - offsetX;
+    my = e.pageY - offsetY;
+
+    // We return a simple javascript object with x and y defined
+    return {x: mx, y: my};
+}
