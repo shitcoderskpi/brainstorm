@@ -47,4 +47,7 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Canvas}/{id?}");
-app.Run();
+app.Start();
+
+
+public partial class Program { }
