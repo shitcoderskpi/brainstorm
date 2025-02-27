@@ -11,10 +11,8 @@ function drawGrid() {
     let pT = 0;
     let pR = 0;
     let pB = 0;
-
-    const prevStyle = ctxCanvas.strokeStyle;
+    
     ctxCanvas.strokeStyle = 'lightgrey';
-    const prevLineWidth = ctxCanvas.lineWidth;
     ctxCanvas.lineWidth = 1;
 
     ctxCanvas.beginPath();
@@ -27,7 +25,4 @@ function drawGrid() {
         ctxCanvas.lineTo(window.innerWidth - pR, y);
     }
     ctxCanvas.stroke();
-
-    ctxCanvas.strokeStyle = prevStyle;
-    ctxCanvas.lineWidth = prevLineWidth;
 }
