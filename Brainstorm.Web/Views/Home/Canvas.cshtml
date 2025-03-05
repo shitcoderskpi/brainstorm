@@ -1,0 +1,31 @@
+@{
+ViewData["Title"] = "canvas";
+}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/fabric@latest/dist/index.min.js"></script>
+    <script src="lib/jquery/dist/jquery.min.js"></script>
+    <link rel="stylesheet" href="/css/canvas.css">
+</head>
+
+<body>
+
+<div id="canvas-related">
+    <div id="ui-toolbar">
+        <button id="set-cursor-style">1</button>
+        <button id="set-pencil-style">2</button>
+    </div>
+    <canvas id="canvas"></canvas>
+    <script src="js/canvas.js"></script>
+
+</div>
+
+</body>
+
+</html>
