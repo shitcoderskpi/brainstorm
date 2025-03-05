@@ -1,87 +1,101 @@
-let userId = localStorage.getItem("userId");    // Take id from storage
-if (!userId) {                                               // if no id
-    userId = crypto.randomUUID();                            // than create one
-    localStorage.setItem("userId", userId);                  // and set it
-}
-
-
-
 const $ = (id) => document.getElementById(id);
 const socket = new WebSocket("wss://dehobitto.xyz/ws");
 
+// consts size
 const viewWidth = window.innerWidth * 0.98;
 const viewHeight = window.innerHeight * 0.95;
 
-const canvas = new fabric.Canvas($('canvas', { renderOnAddRemove: false }), {
+// create fabric canvas
+const canvas = new fabric.Canvas($('canvas'), {
     isDrawingMode: false,
     width: viewWidth,
     height: viewHeight
 });
 
-canvas.objects = new Map();
-
+// clear padding
 const canvasWrapper = canvas.wrapperEl;
 canvasWrapper.style.position = 'initial'; 
 canvasWrapper.style.margin = '0';
 
+// create brush
 canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
 fabric.Object.prototype.transparentCorners = false;
 canvas.freeDrawingBrush.width = 5;
+canvas.freeDrawingBrush.color = 'black'
+
+// added id here, so its not lost when toObject called
+fabric.Object.prototype.toObject = (function (toObject) {
+    return function (propertiesToInclude) {
+        return {
+            ...toObject.call(this, propertiesToInclude),
+            id: this.id,
+        };
+    };
+})(fabric.Object.prototype.toObject);
+
+// we find obj by id
+function findObject(id) {
+    return canvas._objects.find(obj => obj && obj.id === id);
+}
 
 $("set-pencil-style").onclick = function () {
-    console.log("set pencil style");
+    console.log("Pencil mode");
+    
     canvas.isDrawingMode = true;
 }
 
 $("set-cursor-style").onclick = function () {
-    console.log("set pencil style");
+    console.log("Moving mode");
+    
     canvas.isDrawingMode = false;
 }
 
-function sendDrawingData(pathData) {
-    socket.send(JSON.stringify({
-        type: 'drawing',
-        path: pathData
-    }));
-}
-
-// Слушаем событие рисования и отправляем данные о каждой точке
-canvas.on('path:created', function (e) {
-    const newId = crypto.randomUUID();
-    e.path.set({ id: newId });
-    console.log("Assigned ID:", newId, "to path", e.path);
-    const pathData = e.path.toObject();
-    pathData.id = newId;
-    console.log("ID SENDED", pathData.id);
-    sendDrawingData(pathData);  // Отправляем данные о только что нарисованном пути
-});
-
+//Send data when obj moved
 canvas.on('object:modified', function (e) {
     const movedObject = e.target;
 
     const data = {
-        type: 'move',
         left: movedObject.left,
         top: movedObject.top,
         scaleX: movedObject.scaleX,
         scaleY: movedObject.scaleY,
         id: movedObject.id
     };
-    
-    console.log("IDDDDDDDDDDDDDDDD", movedObject);
+
+    console.log(data.id, " modified");
 
     sendMoveData(data);
 })
 
-function sendMoveData(data) {
-    socket.send(JSON.stringify(data));
-}
+// when we create path, set id and send it to everyone
+canvas.on('path:created', function (e) {
+    const newId = crypto.randomUUID();
+    e.path.set({ id: newId });
+    
+    console.log(newId, " assigned to", e.path);
+    
+    const pathData = e.path.toObject();
+    
+    console.log(pathData.id, " sent");
+    console.log(e.path.id, " drawn");
+    
+    sendDrawingData(pathData);
+});
 
+// socket handler, pretty understandable
 socket.onmessage = function (event) {
     const message = JSON.parse(event.data);
     
+    console.log("Got a message ", message.type);
+    console.log(message);
+
     if (message.type === 'move') {
-        let movedObject = findObject(message.id);
+        let movedObject = findObject(message.data.id);
+
+        if (!movedObject) {
+            console.warn("Объект с id", message.data.id, "не найден");
+            return;
+        }
 
         movedObject.set({
             left: message.left,
@@ -90,6 +104,12 @@ socket.onmessage = function (event) {
             scaleY: message.scaleY
         });
         
+        console.log(
+            message.type, " type",
+            message.id, " id request",
+            movedObject.id, " id response");
+        
+        // need to redraw when changed
         canvas.renderAll();
     }else if(message.type === 'drawing')
     {
@@ -102,12 +122,24 @@ socket.onmessage = function (event) {
             strokeWidth: message.path.strokeWidth,
             id: message.path.id
         });
-        canvas.add(path);
-        console.log("All objects:", canvas._objects.map(obj => obj));
+
+        console.log(
+            message.type, " type",
+            message.id, " id sent",
+            path.id, " id got");
     }
 };
 
-function findObject(id) {
-    const ids = canvas._objects.find(obj => obj && obj.id === id);
-    return ids;
+function sendDrawingData(pathData) {
+    socket.send(JSON.stringify({
+        type: 'drawing',
+        path: pathData
+    }));
+}
+
+function sendMoveData(data) {
+    socket.send(JSON.stringify({
+        type: 'move',
+        data: data
+    }));
 }
