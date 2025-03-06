@@ -16,6 +16,7 @@ public class WebSocketIntegrationTest(WebApplicationFactory<Program> factory)
     // ReSharper disable once InconsistentNaming
     private readonly string[] _URIs = ["ws://localhost:5057/ws", "ws://localhost:7042/ws"];
     private WebSocketClient _client;
+    private const uint BufferSize = 8192;
 
     private async Task<WebSocket> TryConnect(WebSocketClient client)
     {
@@ -52,20 +53,26 @@ public class WebSocketIntegrationTest(WebApplicationFactory<Program> factory)
         socket.Abort();
     }
 
-    // [Fact]
-    // public async Task ReceiveTest()
-    // {
-    //     _client ??= factory.Server.CreateWebSocketClient();
-    //     var socket = await TryConnect(_client);
-    //     
-    //     await socket.SendAsync(new ArraySegment<byte>("Hello world"u8.ToArray()), WebSocketMessageType.Text, true, CancellationToken.None);
-    //     
-    //     var data = await socket.ReceiveAsync(new ArraySegment<byte>("Hello world"u8.ToArray()), CancellationToken.None);
-    //     
-    //     Assert.Equal(WebSocketMessageType.Text, data.MessageType);
-    //     
-    //     Assert.Equal("Hello world", data.ToString());
-    //     
-    //     socket.Abort();
-    // } 
+    [Fact]
+    public async Task ReceiveTest()
+    {
+        _client ??= factory.Server.CreateWebSocketClient();
+        var sendingSocket = await TryConnect(_client);
+        var receivingSocket = await TryConnect(_client);
+        
+        var rnd = new Random();
+        
+        var data = rnd.Next(1_000_000, 100_000_000).ToString();
+        
+        await sendingSocket.SendAsync(new ArraySegment<byte>(data.Select(x => (byte)x).ToArray()), WebSocketMessageType.Text, true, CancellationToken.None);
+        
+        var buffer = new byte[BufferSize];
+        var result = await receivingSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+        
+        Assert.Equal(WebSocketMessageType.Text, result.MessageType);
+        Assert.Equal(data, Encoding.UTF8.GetString(buffer, 0, result.Count));
+        
+        sendingSocket.Abort();
+        receivingSocket.Abort();
+    }
 }
