@@ -48,7 +48,10 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Canvas}/{id?}");
 
-app.Run();
+app.MapControllerRoute(
+        name: "default",
+        pattern: "{controller=Home}/{action=Session}/{id?}");
 
+app.Run();
 
 public partial class Program { }
