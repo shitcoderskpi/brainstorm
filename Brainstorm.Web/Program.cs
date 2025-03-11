@@ -1,4 +1,14 @@
+using Brainstorm.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<BrainstormDbContext>(options =>
+{
+    options.UseSqlite("Data Source=brainstorm.db");
+});
+
+builder.Services.AddScoped<UserRepository>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
