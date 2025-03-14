@@ -1,4 +1,5 @@
 using Brainstorm.Data.Sessions;
+using Brainstorm.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Console;
 
@@ -25,19 +26,17 @@ public class SessionController : Controller
     }
     
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] string requestData)
+    public IActionResult Create([FromBody]UserViewModel userViewModel)
     {
-        // TODO: FIXME
-        //       Microsoft Logging bullshit does not work
-        _logger.LogDebug("Got request for session");
-        
-        _logger.LogDebug("Got request for session");
-        if (!ModelState.IsValid) _logger.LogDebug("Invalid request");
+        _logger.LogInformation("Got request for session");
+        _logger.LogInformation(userViewModel.UserId);
+        if (!ModelState.IsValid) return BadRequest();
         // TODO: FIXME
         //       Create user struct to serialize from request
-        var session = await SessionFactory.CreateAsync(requestData);
+        var session = SessionFactory.Create(userViewModel.UserId);
         
-        Response.Redirect($"/Home/Session/{session.SessionId}");
-        return new JsonResult(session.SessionId);
+        _logger.LogInformation("Session created");
+        
+        return Json(new { urlToRedirect = $"/home/canvas/{session.SessionId}" });
     }
 }

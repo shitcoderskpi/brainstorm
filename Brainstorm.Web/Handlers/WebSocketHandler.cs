@@ -7,7 +7,7 @@ namespace Brainstorm.Web.Handlers;
 public class WebSocketHandler: IDisposable
 {
     private const short BufferSize = 8 * 1024;
-    private static readonly List<WebSocket> _clients = [];
+    private readonly List<WebSocket> _clients = [];
     private readonly ILogger _logger;
 
     public WebSocketHandler()

@@ -1,18 +1,22 @@
 const $ = (id) => document.getElementById(id);
 
 $("create-new").onclick = async function () {
+    // TODO: Replace w/ user id in future
     const id = crypto.randomUUID();
     console.log(id);
-    var raw = await fetch("/api/session/create", {
+
+    // TODO: Error handling
+    await fetch("/api/session/create", {
         method: 'POST',
         headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
         },
-        body: JSON.stringify({id: id})
-      });
-      
-      var response = raw.json();
-      
-      console.log(response)
+        body: JSON.stringify({UserId: id})
+      }).then(res => res.json()
+        .then(data => {
+            console.log(data)
+
+            window.location.href = data["urlToRedirect"]
+        }));
 }
