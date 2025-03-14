@@ -12,27 +12,23 @@ namespace Brainstorm.Data
         {
             _context = context;
         }
-
-        // Додає нового користувача
+        
         public async Task AddUserAsync(User user)
         {
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
         }
-
-        // Отримує користувача за логіном
+        
         public async Task<User> GetUserByLoginAsync(string login)
         {
             return await _context.Users.FirstOrDefaultAsync(u => u.Login == login);
         }
-
-        // Отримує всіх користувачів
+        
         public async Task<IEnumerable<User>> GetAllUsersAsync()
         {
             return await _context.Users.ToListAsync();
         }
-
-        // Видаляє користувача за ID
+        
         public async Task<bool> DeleteUserAsync(int id)
         {
             var user = await _context.Users.FindAsync(id);
@@ -42,8 +38,7 @@ namespace Brainstorm.Data
             await _context.SaveChangesAsync();
             return true;
         }
-
-        // Оновлює користувача
+        
         public async Task<bool> UpdateUserAsync(User user)
         {
             var existingUser = await _context.Users.FindAsync(user.Id);
