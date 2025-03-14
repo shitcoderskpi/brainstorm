@@ -26,17 +26,17 @@ public class SessionController : Controller
     }
     
     [HttpPost]
-    public IActionResult Create([FromBody]UserViewModel userViewModel)
+    public IActionResult Create([FromBody]SessionViewModel sessionViewModel)
     {
-        _logger.LogInformation("Got request for session");
-        _logger.LogInformation(userViewModel.UserId);
+        using (_logger.BeginScope(sessionViewModel))
+        {
+            _logger.LogDebug(sessionViewModel.ToString());
+        }
+        
         if (!ModelState.IsValid) return BadRequest();
-        // TODO: FIXME
-        //       Create user struct to serialize from request
-        var session = SessionFactory.Create(userViewModel.UserId);
         
-        _logger.LogInformation("Session created");
+        var session = SessionFactory.Create(sessionViewModel.UserId, sessionViewModel.Password);
         
-        return Json(new { urlToRedirect = $"/home/canvas/{session.SessionId}" });
+        return Json(new { urlToRedirect = $"/home/canvas/{session.SessionId}"});
     }
 }

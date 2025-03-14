@@ -1,3 +1,4 @@
+// TODO: Add integration tests
 const $ = (id) => document.getElementById(id);
 
 $("create-new").onclick = async function () {

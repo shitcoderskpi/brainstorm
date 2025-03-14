@@ -2,12 +2,6 @@ using Brainstorm.Data.Sessions;
 using Brainstorm.Web.Handlers;
 using Microsoft.Extensions.Logging.Console;
 
-var session = SessionFactory.Create("0");
-Console.WriteLine($"http://localhost:5057/home/canvas/{session.SessionId}");
-
-session = SessionFactory.Create("0");
-Console.WriteLine($"http://localhost:5057/home/canvas/{session.SessionId}");
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.AddSimpleConsole(options =>
@@ -39,7 +33,7 @@ app.UseWebSockets();
 
 app.Map("home/canvas/{sessionId}/ws", async (HttpContext context, string sessionId) =>
 {
-    if (!SessionDirector.SessionExists(sessionId).Result)
+    if (!SessionFactory.SessionExists(sessionId).Result)
     {
         context.Response.StatusCode = 404;
         return;
@@ -47,6 +41,7 @@ app.Map("home/canvas/{sessionId}/ws", async (HttpContext context, string session
     
     if (context.WebSockets.IsWebSocketRequest)
     {
+        Console.WriteLine($"WebSocket request on session: {sessionId}");
         var webSocket = await context.WebSockets.AcceptWebSocketAsync();
         var handler = new WebSocketHandler();
         await handler.Handle(context, webSocket);
