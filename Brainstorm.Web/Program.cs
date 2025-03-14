@@ -1,5 +1,12 @@
+using Brainstorm.Data.Sessions;
 using Brainstorm.Web.Handlers;
 using Microsoft.Extensions.Logging.Console;
+
+var session = SessionFactory.Create("0");
+Console.WriteLine($"http://localhost:5057/home/canvas/{session.SessionId}");
+
+session = SessionFactory.Create("0");
+Console.WriteLine($"http://localhost:5057/home/canvas/{session.SessionId}");
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,14 +29,22 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseRouting();
 app.UseWebSockets();
 
-app.Map("/ws", async context =>
+
+app.Map("home/canvas/{sessionId}/ws", async (HttpContext context, string sessionId) =>
 {
+    if (!SessionDirector.SessionExists(sessionId).Result)
+    {
+        context.Response.StatusCode = 404;
+        return;
+    }
+    
     if (context.WebSockets.IsWebSocketRequest)
     {
         var webSocket = await context.WebSockets.AcceptWebSocketAsync();
@@ -46,12 +61,13 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Canvas}/{id?}");
+    pattern: "{controller=Home}/{action=Canvas}/{id}");
 
 app.MapControllerRoute(
         name: "default",
-        pattern: "{controller=Home}/{action=Session}/{id?}");
+        pattern: "{controller=Home}/{action=Session}");
 
 app.Run();
+
 
 public partial class Program { }

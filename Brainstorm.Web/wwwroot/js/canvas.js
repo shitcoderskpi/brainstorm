@@ -1,5 +1,9 @@
 const $ = (id) => document.getElementById(id);
-const socket = new WebSocket("wss://dehobitto.xyz/ws");
+// SUSPICIOUS!!!!!!!
+// PAY ATTENTION IF DOES NOT WORK!!!!!!!!!!!!!!
+const current_location = window.location; // <- this
+console.log(current_location.toString().replace("http://", "ws://") + "/ws") // <- and this
+const socket = new WebSocket(current_location.toString().replace("http://", "ws://") + "/ws"); // <- also this
 
 // consts size
 const viewWidth = window.innerWidth * 0.98;
@@ -143,3 +147,5 @@ function sendMoveData(data) {
         data: data
     }));
 }
+
+canvas.renderAll();
