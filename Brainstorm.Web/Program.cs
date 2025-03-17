@@ -1,4 +1,5 @@
 using Brainstorm.Data.Sessions;
+using Brainstorm.Web.Factories;
 using Brainstorm.Web.Handlers;
 using Microsoft.Extensions.Logging.Console;
 
@@ -43,7 +44,7 @@ app.Map("home/canvas/{sessionId}/ws", async (HttpContext context, string session
     {
         Console.WriteLine($"WebSocket request on session: {sessionId}");
         var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-        var handler = new WebSocketHandler();
+        var handler = WebSocketHandlerFactory.CreateOrGet(sessionId);
         await handler.Handle(context, webSocket);
     }
     else

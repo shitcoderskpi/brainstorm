@@ -131,6 +131,9 @@ socket.onmessage = function (event) {
             message.type, " type",
             message.id, " id sent",
             path.id, " id got");
+        
+        canvas.add(path);
+        canvas.renderAll();
     }
 };
 
@@ -148,4 +151,3 @@ function sendMoveData(data) {
     }));
 }
 
-canvas.renderAll();

@@ -38,7 +38,7 @@ public class WebSocketHandler: IDisposable, IAsyncDisposable
         {
             while (socket.State == WebSocketState.Open)
             {
-                _logger.LogInformation("Receiving...");
+                _logger.LogInformation($"Receiving... {_clients.Count}");
                 var result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), context.RequestAborted);
                 if (result.MessageType == WebSocketMessageType.Text)
                 {
