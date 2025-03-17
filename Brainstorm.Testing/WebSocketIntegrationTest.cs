@@ -61,7 +61,7 @@ public class WebSocketIntegrationTest(WebApplicationFactory<Program> factory)
     }
 
 
-    [Fact(Timeout = 5000)]
+    [Fact(Timeout = 100)]
     public async Task ConnectionTest()
     {
         _client ??= factory.Server.CreateWebSocketClient();
@@ -76,7 +76,7 @@ public class WebSocketIntegrationTest(WebApplicationFactory<Program> factory)
         // socket.Dispose();
     }
 
-    [Fact(Timeout = 5000)]
+    [Fact(Timeout = 1000)]
     public async Task ReceiveTest()
     {
         _client ??= factory.Server.CreateWebSocketClient();
@@ -99,5 +99,40 @@ public class WebSocketIntegrationTest(WebApplicationFactory<Program> factory)
         
         sendingSocket.Abort();
         receivingSocket.Abort();
+    }
+
+    [Fact]
+    public void ReceiveDiffSessionTest()
+    {
+        Assert.False(TimeoutAfter(CreateDifferentSessionAndTryRecv(), 1000) is { Result: true });
+    }
+
+    private async Task CreateDifferentSessionAndTryRecv()
+    {
+        _client ??= factory.Server.CreateWebSocketClient();
+        _httpClient ??= factory.Server.CreateClient();
+        
+        var sendingSocket = await TryConnect(_client, _httpClient);
+        var receivingSocket = await TryConnect(_client, _httpClient);
+        
+        var rnd = new Random();
+        
+        var data = rnd.Next(1_000_000, 100_000_000).ToString();
+        
+        await sendingSocket.SendAsync(new ArraySegment<byte>(data.Select(x => (byte)x).ToArray()), WebSocketMessageType.Text, true, CancellationToken.None);
+
+        var buffer = new byte[BufferSize];
+        var result = await receivingSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+        
+        Assert.Equal(WebSocketMessageType.Text, result.MessageType);
+        Assert.Equal(data, Encoding.UTF8.GetString(buffer, 0, result.Count));
+        
+        sendingSocket.Abort();
+        receivingSocket.Abort();
+    }
+
+    private static async Task<bool> TimeoutAfter(Task task, int millisecondsTimeout)
+    {
+        return task == await Task.WhenAny(task, Task.Delay(millisecondsTimeout));
     }
 }
