@@ -13,6 +13,10 @@
       </PackageReference>
     </ItemGroup>
 
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="wwwroot\Images\My.gif" />
+    </ItemGroup>
+
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
