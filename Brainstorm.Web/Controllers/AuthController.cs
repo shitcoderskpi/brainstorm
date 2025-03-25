@@ -3,8 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using Brainstorm.Data;
-using System.Security.Cryptography;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace Brainstorm.Web.Controllers
 {
@@ -23,12 +22,13 @@ namespace Brainstorm.Web.Controllers
         public async Task<IActionResult> Login(string login, string password)
         {
             var user = await _repo.GetUserByLoginAsync(login);
-            if (user == null || user.PasswordHash != Hash(password)) return Unauthorized("Невірні дані");
+            if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+                return Unauthorized("Невірні дані");
+
             var claims = new[] { new Claim(ClaimTypes.Name, user.Login) };
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
-            // повернення на початкову сторінку, як оформите вставьте правильне посилання
             return Redirect("/Home/Index");
         }
 
@@ -40,15 +40,9 @@ namespace Brainstorm.Web.Controllers
         }
 
         [HttpGet]
-        public IActionResult AccessDenied() { return Content("Access Denied"); }
-
-        string Hash(string p)
+        public IActionResult AccessDenied() 
         {
-            using var sha = SHA256.Create();
-            var b = sha.ComputeHash(Encoding.UTF8.GetBytes(p));
-            var sb = new StringBuilder();
-            foreach (var x in b) sb.Append(x.ToString("x2"));
-            return sb.ToString();
+            return Content("Access Denied");
         }
     }
 }
