@@ -3,25 +3,26 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite; 
 using Brainstorm.Data;
-
 using Brainstorm.Web.Handlers;
-using Microsoft.Extensions.Logging.Console;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<BrainstormDbContext>(o =>
+builder.Services.AddDbContext<BrainstormDbContext>(options =>
 {
-    o.UseSqlite("Data Source=brainstorm.db;Cache=Shared;Mode=ReadWriteCreate");
+    options.UseSqlite(
+        "Data Source=brainstorm.db;Cache=Shared;Mode=ReadWriteCreate",
+        x => x.MigrationsAssembly("Brainstorm.Data")
+    );
 });
 
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(o =>
+    .AddCookie(options =>
     {
-        o.LoginPath = "/Auth/Login";
-        o.AccessDeniedPath = "/Auth/AccessDenied";
+        options.LoginPath = "/Auth/Login";
+        options.AccessDeniedPath = "/Auth/AccessDenied";
     });
 
 var app = builder.Build();
@@ -33,7 +34,6 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
 
 app.UseRouting();
@@ -64,11 +64,10 @@ app.MapControllerRoute(
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<BrainstormDbContext>();
-    db.Database.EnsureCreated();
+    db.Database.Migrate();
     db.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;");
 }
 
 app.Run();
-
 
 public partial class Program { }
