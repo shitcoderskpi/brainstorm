@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite; 
 using Brainstorm.Data;
 
+using Brainstorm.Web.Handlers;
+using Microsoft.Extensions.Logging.Console;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<BrainstormDbContext>(o =>
@@ -30,9 +33,27 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 app.UseStaticFiles();
+
 app.UseRouting();
 app.UseAuthentication();
+app.UseWebSockets();
+
+app.Map("/ws", async context =>
+{
+    if (context.WebSockets.IsWebSocketRequest)
+    {
+        var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+        var handler = new WebSocketHandler();
+        await handler.Handle(context, webSocket);
+    }
+    else
+    {
+        context.Response.StatusCode = 400;
+    }
+});
+
 app.UseAuthorization();
 
 app.MapControllerRoute(
@@ -50,6 +71,4 @@ using (var scope = app.Services.CreateScope())
 app.Run();
 
 
-public partial class Program
-{
-}
+public partial class Program { }
