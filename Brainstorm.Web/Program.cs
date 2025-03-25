@@ -1,22 +1,12 @@
-using Brainstorm.Data.Sessions;
-using Brainstorm.Web.Factories;
-using Brainstorm.Web.Handlers;
-using Microsoft.Extensions.Logging.Console;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Logging.AddSimpleConsole(options =>
-{
-    options.IncludeScopes = true;
-    options.SingleLine = false;
-    options.TimestampFormat = "[hh:mm:ss.fff] ";
-    options.ColorBehavior = LoggerColorBehavior.Default;
-});
-
+// Add services to the container.
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
+// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -24,46 +14,17 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
+
 app.UseRouting();
-app.UseWebSockets();
-
-
-app.Map("home/canvas/{sessionId}/ws", async (HttpContext context, string sessionId) =>
-{
-    if (!SessionFactory.SessionExists(sessionId).Result)
-    {
-        context.Response.StatusCode = 404;
-        return;
-    }
-    
-    if (context.WebSockets.IsWebSocketRequest)
-    {
-        Console.WriteLine($"WebSocket request on session: {sessionId}");
-        var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-        var handler = WebSocketHandlerFactory.CreateOrGet(sessionId);
-        await handler.Handle(context, webSocket);
-    }
-    else
-    {
-        context.Response.StatusCode = 400;
-    }
-});
 
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Canvas}/{id}");
-
-app.MapControllerRoute(
-        name: "default",
-        pattern: "{controller=Home}/{action=Session}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
 
-
-public partial class Program { }
+public partial class Program {}
