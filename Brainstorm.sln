@@ -2,10 +2,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Brainstorm.Web", "Brainstorm.Web\Brainstorm.Web.csproj", "{EAFC4933-9E83-4DB3-A2F1-351AD1902DF8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Brainstorm.Models", "Brainstorm.Models\Brainstorm.Models.csproj", "{7D04B696-CB84-446D-AACD-0B2DADFAD0EA}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Brainstorm.Data", "Brainstorm.Data\Brainstorm.Data.csproj", "{3AB00114-5CFB-4BD0-BBB5-1C72ED4BA0D6}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Brainstorm.Testing", "Brainstorm.Testing\Brainstorm.Testing.csproj", "{9E139495-CA63-49E4-A9C5-6E4A39C82F58}"
 EndProject
 Global
@@ -18,14 +14,6 @@ Global
 		{EAFC4933-9E83-4DB3-A2F1-351AD1902DF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EAFC4933-9E83-4DB3-A2F1-351AD1902DF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EAFC4933-9E83-4DB3-A2F1-351AD1902DF8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7D04B696-CB84-446D-AACD-0B2DADFAD0EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7D04B696-CB84-446D-AACD-0B2DADFAD0EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7D04B696-CB84-446D-AACD-0B2DADFAD0EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7D04B696-CB84-446D-AACD-0B2DADFAD0EA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3AB00114-5CFB-4BD0-BBB5-1C72ED4BA0D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3AB00114-5CFB-4BD0-BBB5-1C72ED4BA0D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3AB00114-5CFB-4BD0-BBB5-1C72ED4BA0D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3AB00114-5CFB-4BD0-BBB5-1C72ED4BA0D6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9E139495-CA63-49E4-A9C5-6E4A39C82F58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9E139495-CA63-49E4-A9C5-6E4A39C82F58}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9E139495-CA63-49E4-A9C5-6E4A39C82F58}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -11,6 +11,7 @@ const canvas = new fabric.Canvas($('canvas'), {
     width: viewWidth,
     height: viewHeight
 });
+window.canvas = canvas // for tests
 
 // clear padding
 const canvasWrapper = canvas.wrapperEl;
@@ -19,7 +20,6 @@ canvasWrapper.style.margin = '0';
 
 // create brush
 canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-fabric.Object.prototype.transparentCorners = false;
 canvas.freeDrawingBrush.width = 5;
 canvas.freeDrawingBrush.color = 'black'
 

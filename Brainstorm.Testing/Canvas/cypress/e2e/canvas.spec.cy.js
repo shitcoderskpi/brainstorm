@@ -9,8 +9,8 @@ describe('Canvas Tests', () => {
 
     it('Adding retcangle to canvas', () => {
         cy.window().then((win) => {
-            const canvas = win.canvas; // Получаем объект fabric.Canvas
-            expect(canvas).to.exist; // Проверяем, что он есть
+            const canvas = win.canvas;
+            expect(canvas).to.exist;
 
             const rect = new win.fabric.Rect({
                 left: 50,
@@ -44,17 +44,11 @@ describe('Canvas Tests', () => {
             });
         });
     });
-    
-    it('Should check websocket', () => {
-        
-    })
 });
 
 Cypress.on('uncaught:exception', (err, runnable) => {
-    // Игнорируем ошибку WebSocket
     if (err.message.includes('Failed to execute \'send\' on \'WebSocket\''))
-        return false; // Предотвратить фейл теста
-
-    // Если другая ошибка, её нужно обработать
+        return false;
+    
     return true;
 });
