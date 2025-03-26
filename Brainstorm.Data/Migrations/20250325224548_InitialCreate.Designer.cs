@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Brainstorm.Data.Migrations
 {
     [DbContext(typeof(BrainstormDbContext))]
-    [Migration("20250311164747_InitialCreate")]
+    [Migration("20250325224548_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

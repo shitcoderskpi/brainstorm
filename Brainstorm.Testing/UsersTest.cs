@@ -2,15 +2,16 @@ using System.Net;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 using Xunit.Abstractions;
+using Brainstorm.Testing; 
 
 namespace Brainstorm.Testing
 {
-    public class StressTests : IClassFixture<WebApplicationFactory<Program>>
+    public class StressTests : IClassFixture<UniqueSqliteFactory>
     {
         private readonly HttpClient _client;
         private readonly ITestOutputHelper _output;
 
-        public StressTests(WebApplicationFactory<Program> factory, ITestOutputHelper output)
+        public StressTests(UniqueSqliteFactory factory, ITestOutputHelper output)
         {
             _client = factory.CreateClient();
             _output = output;
@@ -32,6 +33,7 @@ namespace Brainstorm.Testing
                 tasks.Add(_client.PostAsync("/api/Users/register", content));
                 _output.WriteLine($"Sent registration for {login}");
             }
+
             var responses = await Task.WhenAll(tasks);
             foreach (var response in responses)
             {
@@ -58,7 +60,7 @@ namespace Brainstorm.Testing
             Assert.True(
                 regResponse.StatusCode == HttpStatusCode.OK || regResponse.StatusCode == HttpStatusCode.Redirect,
                 "Registration for stress login failed");
-            
+
             int requestCount = 20;
             var tasks = new List<Task<HttpResponseMessage>>();
             for (int i = 0; i < requestCount; i++)
@@ -71,6 +73,7 @@ namespace Brainstorm.Testing
                 tasks.Add(_client.PostAsync("/Auth/Login", loginContent));
                 _output.WriteLine($"Sent login request {i + 1} for {username}");
             }
+
             var responses = await Task.WhenAll(tasks);
             foreach (var response in responses)
             {
