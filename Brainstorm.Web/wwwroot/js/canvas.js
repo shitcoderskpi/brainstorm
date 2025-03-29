@@ -143,3 +143,90 @@ function sendMoveData(data) {
         data: data
     }));
 }
+
+
+let isDeleteMode = false;
+
+$("set-delete-style").onclick = function () {
+    canvas.isDrawingMode = false;
+    console.log("Drawing off.");
+
+    if (!isDeleteMode) {
+        console.log("Delete mode on.");
+        canvas.selection = true; 
+        isDeleteMode = true;
+    } else {
+        
+        const activeObjects = canvas.getActiveObjects();
+
+        if (activeObjects.length === 0) {
+            console.warn("No objects selected for deletion.");
+            return;
+        }
+
+        const objectIds = activeObjects.map(obj => obj.id);
+
+        console.log("Delete objects:", objectIds);
+
+        activeObjects.forEach(obj => canvas.remove(obj));
+        canvas.discardActiveObject();
+
+        sendDeleteData(objectIds);
+
+    }
+};
+
+function sendDeleteData(objectIds) {
+    socket.send(JSON.stringify({
+        type: 'delete',
+        ids: objectIds
+    }));
+}
+
+socket.onmessage = function (event) {
+    const message = JSON.parse(event.data);
+
+    console.log("Message received:", message.type);
+
+   if (message.type === 'move') {
+        let movedObject = findObject(message.data.id);
+
+        if (!movedObject) {
+            console.warn("Object with id", message.data.id, "not found");
+            return;
+        }
+
+        movedObject.set({
+            left: message.left,
+            top: message.top,
+            scaleX: message.scaleX,
+            scaleY: message.scaleY
+        });
+
+        canvas.renderAll();
+    } else if (message.type === 'drawing') {
+        const path = new fabric.Path(message.path.path);
+        path.set({
+            left: message.path.left,
+            top: message.path.top,
+            fill: message.path.fill,
+            stroke: message.path.stroke,
+            strokeWidth: message.path.strokeWidth,
+            id: message.path.id
+        });
+
+        canvas.add(path);
+    } else if (message.type === 'delete') {
+        message.ids.forEach(id => {
+            let objectToRemove = findObject(id);
+            if (objectToRemove) {
+                console.log("Delete received object:", id);
+                canvas.remove(objectToRemove);
+            } else {
+                console.warn("Object to delete not found:", id);
+            }
+        });
+
+        canvas.renderAll();
+    }
+};
