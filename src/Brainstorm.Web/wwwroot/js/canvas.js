@@ -176,13 +176,16 @@ socket.onmessage = function (event) {
         canvas.add(path);
         canvas.renderAll();
     }
-    else if (message.type === 'delete') {
+    else if (message.type === 'delete')
+    {
         message.ids.forEach(id => {
             let objectToRemove = findObject(id);
-            if (objectToRemove) {
+            if (objectToRemove)
+            {
                 console.log("Delete received object:", id);
                 canvas.remove(objectToRemove);
-            } else {
+            } else
+            {
                 console.warn("Object to delete not found:", id);
             }
         });
@@ -206,9 +209,25 @@ function sendMoveData(data) {
     }));
 }
 
-function sendDeleteData(objectIds) {
+function sendDeleteData(objectIds)
+{
     socket.send(JSON.stringify({
         type: 'delete',
         ids: objectIds
     }));
 }
+
+const colorPicker = document.getElementById("color-picker");
+const colorInput = document.getElementById("color-input");
+
+colorPicker.addEventListener("input", function () {
+    colorInput.value = this.value;
+    canvas.freeDrawingBrush.color = this.value;
+});
+
+colorInput.addEventListener("input", function () {
+    if (/^#[0-9A-F]{6}$/i.test(this.value)) {
+        colorPicker.value = this.value;
+        canvas.freeDrawingBrush.color = this.value;
+    }
+});
