@@ -13,7 +13,7 @@ public class HomeController : Controller
         _logger = logger;
     }
 
-    public IActionResult Canvas()
+    public IActionResult Index()
     {
         _logger.LogDebug("Loading canvas page");
         return View();

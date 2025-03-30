@@ -5,6 +5,15 @@
     </ItemGroup>
 
     <ItemGroup>
+      <_ContentIncludedByDefault Remove="wwwroot\Images\My.gif" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Brainstorm.Data\Brainstorm.Data.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.*" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.*" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.*">

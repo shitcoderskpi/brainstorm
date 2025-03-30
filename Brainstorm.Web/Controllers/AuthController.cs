@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using Brainstorm.Data;
+using System.Threading.Tasks;
 using System.Security.Cryptography;
 using System.Text;
 

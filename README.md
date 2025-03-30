@@ -7,14 +7,15 @@ is a collaborative platform designed to help teams generate and discuss ideas in
  - Real-time collaboration 🤝
  - Interactive drawing and object manipulation ✏️
  - Easy-to-use canvas powered by ***Fabric.js*** 🖼️
+ - Accounts 👤
+ - Database 📚
+ - Room structure 🏠
+ - Login page 🔑
+   
 ## 🔮 Upcoming features
 - Media support in canvas 🎥
-- Accounts 👤
-- Database 📚
 - Different colors, styles of drawing 🎨
 - Basic shapes on canvas ✪
-- Room structure 🏠
-- Login page 🔑
 - Homepage 🌍
 - Chat??? 💬
 

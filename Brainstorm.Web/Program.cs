@@ -1,6 +1,5 @@
 using Brainstorm.Data.Sessions;
 using Brainstorm.Web.Factories;
-using Microsoft.Extensions.Logging.Console;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Brainstorm.Data;
@@ -11,13 +10,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 builder.Logging.AddSimpleConsole(options =>
+builder.Services.AddDbContext<BrainstormDbContext>(options =>
 {
-    options.IncludeScopes = true;
-    options.SingleLine = false;
-    options.TimestampFormat = "[hh:mm:ss.fff] ";
-    options.ColorBehavior = LoggerColorBehavior.Default;
+    options.UseSqlite(
+        "Data Source=brainstorm.db;Cache=Shared;Mode=ReadWriteCreate",
+        x => x.MigrationsAssembly("Brainstorm.Data")
+    );
 });
 
+builder.Services.AddScoped<UserRepository>();
 builder.Services.AddDbContext<BrainstormDbContext>(o =>
 {
     o.UseSqlite("Data Source=brainstorm.db;Cache=Shared;Mode=ReadWriteCreate");
@@ -39,7 +40,6 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -48,7 +48,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseWebSockets();
 
 app.Map("home/canvas/{sessionId}/ws", async (HttpContext context, string sessionId) =>
 {
@@ -70,15 +70,15 @@ app.Map("home/canvas/{sessionId}/ws", async (HttpContext context, string session
         context.Response.StatusCode = 400;
     }
 });
-
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Auth}/{action=Login}");
+    pattern: "{controller=Home}/{action=Index}/{id?}"
+);
 
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<BrainstormDbContext>();
-    db.Database.EnsureCreated();
+    db.Database.Migrate();
     db.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;");
 }
 
