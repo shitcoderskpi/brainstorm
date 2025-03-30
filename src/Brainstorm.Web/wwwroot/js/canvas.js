@@ -44,14 +44,26 @@ function findObject(id) {
 
 $("set-pencil-style").onclick = function () {
     console.log("Pencil mode");
-    
+
+    deleteModeActive = false;
     canvas.isDrawingMode = true;
 }
 
 $("set-cursor-style").onclick = function () {
     console.log("Moving mode");
-    
+
+    deleteModeActive = false;
     canvas.isDrawingMode = false;
+}
+
+let deleteModeActive = false;
+
+$("set-delete-style").onclick = function () {
+
+    canvas.isDrawingMode = false;
+    deleteModeActive = true;
+    console.log("Delete mode on.");
+    canvas.selection =true;
 }
 
 //Send data when obj moved
@@ -84,6 +96,35 @@ canvas.on('path:created', function (e) {
     console.log(e.path.id, " drawn");
     
     sendDrawingData(pathData);
+});
+
+canvas.on('selection:created', function () {
+    if (!deleteModeActive) return;
+
+    const activeObjects = canvas.getActiveObjects();
+    if (activeObjects.length === 0) return;
+
+    const objectIds = activeObjects.map(obj => obj.id);
+    console.log("Delete objects:", objectIds);
+
+    activeObjects.forEach(obj => canvas.remove(obj));
+    canvas.discardActiveObject();
+    canvas.renderAll();
+
+    sendDeleteData(objectIds);
+});
+
+canvas.on('mouse:down', function (event)
+{
+    if (!deleteModeActive) return;
+
+    const target = event.target;
+    if (target)
+    {
+        console.log("Delete object:", target.id);
+        canvas.remove(target);
+        sendDeleteData([target.id]);
+    }
 });
 
 // socket handler, pretty understandable
@@ -135,7 +176,21 @@ socket.onmessage = function (event) {
         canvas.add(path);
         canvas.renderAll();
     }
+    else if (message.type === 'delete') {
+        message.ids.forEach(id => {
+            let objectToRemove = findObject(id);
+            if (objectToRemove) {
+                console.log("Delete received object:", id);
+                canvas.remove(objectToRemove);
+            } else {
+                console.warn("Object to delete not found:", id);
+            }
+        });
+
+        canvas.renderAll();
+    }
 };
+
 
 function sendDrawingData(pathData) {
     socket.send(JSON.stringify({
@@ -151,3 +206,9 @@ function sendMoveData(data) {
     }));
 }
 
+function sendDeleteData(objectIds) {
+    socket.send(JSON.stringify({
+        type: 'delete',
+        ids: objectIds
+    }));
+}
