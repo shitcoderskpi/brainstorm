@@ -1,5 +1,7 @@
 using Brainstorm.Data;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Brainstorm.Web.Controllers
@@ -27,7 +29,7 @@ namespace Brainstorm.Web.Controllers
             var user = new User
             {
                 Login = login,
-                PasswordHash = HashPassword(password)
+                PasswordHash = ComputeSha256Hash(password)
             };
 
             await _userRepository.AddUserAsync(user);
@@ -45,7 +47,7 @@ namespace Brainstorm.Web.Controllers
         public async Task<IActionResult> Login([FromForm] string login, [FromForm] string password)
         {
             var user = await _userRepository.GetUserByLoginAsync(login);
-            if (user == null || !VerifyPassword(password, user.PasswordHash))
+            if (user == null || user.PasswordHash != ComputeSha256Hash(password))
             {
                 return Unauthorized("Невірний логін або пароль.");
             }
@@ -61,14 +63,18 @@ namespace Brainstorm.Web.Controllers
             return Ok("Користувач видалений.");
         }
         
-        private string HashPassword(string password)
+        private string ComputeSha256Hash(string rawData)
         {
-            return BCrypt.Net.BCrypt.HashPassword(password);
-        }
- 
-        private bool VerifyPassword(string password, string hashedPassword)
-        {
-            return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
+            using (SHA256 sha256Hash = SHA256.Create())
+            {
+                byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(rawData));
+                StringBuilder builder = new StringBuilder();
+                foreach (var b in bytes)
+                {
+                    builder.Append(b.ToString("x2"));
+                }
+                return builder.ToString();
+            }
         }
     }
 }

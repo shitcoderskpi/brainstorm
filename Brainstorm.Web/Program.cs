@@ -1,11 +1,13 @@
+using Brainstorm.Data.Sessions;
+using Brainstorm.Web.Factories;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.Sqlite; 
 using Brainstorm.Data;
-using Brainstorm.Web.Handlers;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddControllersWithViews();
 
 builder.Services.AddDbContext<BrainstormDbContext>(options =>
 {
@@ -16,17 +18,24 @@ builder.Services.AddDbContext<BrainstormDbContext>(options =>
 });
 
 builder.Services.AddScoped<UserRepository>();
+builder.Services.AddDbContext<BrainstormDbContext>(o =>
+{
+    o.UseSqlite("Data Source=brainstorm.db;Cache=Shared;Mode=ReadWriteCreate");
+});
+
+builder.Services.AddScoped<UserRepository>();
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+    .AddCookie(o =>
     {
-        options.LoginPath = "/Auth/Login";
-        options.AccessDeniedPath = "/Auth/AccessDenied";
+        o.LoginPath = "/Auth/Login";
+        o.AccessDeniedPath = "/Auth/AccessDenied";
     });
 
 var app = builder.Build();
 
+// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -35,17 +44,24 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
 app.UseAuthentication();
+app.UseAuthorization();
 app.UseWebSockets();
 
-app.Map("/ws", async context =>
+app.Map("home/canvas/{sessionId}/ws", async (HttpContext context, string sessionId) =>
 {
+    if (!SessionFactory.SessionExists(sessionId).Result)
+    {
+        context.Response.StatusCode = 404;
+        return;
+    }
+    
     if (context.WebSockets.IsWebSocketRequest)
     {
+        Console.WriteLine($"WebSocket request on session: {sessionId}");
         var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-        var handler = new WebSocketHandler();
+        var handler = WebSocketHandlerFactory.CreateOrGet(sessionId);
         await handler.Handle(context, webSocket);
     }
     else
@@ -53,12 +69,9 @@ app.Map("/ws", async context =>
         context.Response.StatusCode = 400;
     }
 });
-
-app.UseAuthorization();
-
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}"
+    pattern: "{controller=Home}/{action=Session}/{id?}"
 );
 
 using (var scope = app.Services.CreateScope())
@@ -70,4 +83,5 @@ using (var scope = app.Services.CreateScope())
 
 app.Run();
 
-public partial class Program { }
+
+public partial class Program {}

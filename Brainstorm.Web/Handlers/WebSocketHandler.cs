@@ -4,10 +4,10 @@ using Microsoft.Extensions.Logging.Console;
 
 namespace Brainstorm.Web.Handlers;
 
-public class WebSocketHandler: IDisposable
+public class WebSocketHandler: IDisposable, IAsyncDisposable
 {
-    private const short BufferSize = 8 * 1024;
-    private static readonly List<WebSocket> _clients = [];
+    private const short BufferSize = 8 * 1024; // 8kb
+    private readonly List<WebSocket> _clients = [];
     private readonly ILogger _logger;
 
     public WebSocketHandler()
@@ -38,7 +38,7 @@ public class WebSocketHandler: IDisposable
         {
             while (socket.State == WebSocketState.Open)
             {
-                _logger.LogInformation("Receiving message");
+                _logger.LogInformation($"Receiving... {_clients.Count}");
                 var result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), context.RequestAborted);
                 if (result.MessageType == WebSocketMessageType.Text)
                 {
@@ -49,9 +49,9 @@ public class WebSocketHandler: IDisposable
             
             _clients.Remove(socket);
         }
-        catch (OperationCanceledException)
+        catch (Exception e) when (e is ObjectDisposedException or OperationCanceledException)
         {
-            _logger.LogInformation("Recieve cancelled");
+            _logger.LogInformation("Receive cancelled");
         }
     }
 
@@ -79,5 +79,12 @@ public class WebSocketHandler: IDisposable
     {
         _logger.LogInformation("Disposing web socket handler");
         GC.SuppressFinalize(this);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _logger.LogInformation("Disposing web socket handler");
+        GC.SuppressFinalize(this);
+        return ValueTask.CompletedTask;
     }
 }

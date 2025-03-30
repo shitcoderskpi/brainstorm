@@ -15,6 +15,18 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
+        _logger.LogDebug("Loading canvas page");
+        return View();
+    }
+
+    public IActionResult Canvas()
+    {
+        return View();
+    }
+
+    public IActionResult Session()
+    {
+        _logger.LogDebug("Loading new session page");
         return View();
     }
 
