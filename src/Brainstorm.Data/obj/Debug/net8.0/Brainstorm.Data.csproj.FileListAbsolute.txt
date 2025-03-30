@@ -1,0 +1,15 @@
+C:\CODE\C#\brainstorm\Brainstorm.Data\bin\Debug\net8.0\Brainstorm.Data.deps.json
+C:\CODE\C#\brainstorm\Brainstorm.Data\bin\Debug\net8.0\Brainstorm.Data.runtimeconfig.json
+C:\CODE\C#\brainstorm\Brainstorm.Data\bin\Debug\net8.0\Brainstorm.Data.dll
+C:\CODE\C#\brainstorm\Brainstorm.Data\bin\Debug\net8.0\Brainstorm.Data.pdb
+C:\CODE\C#\brainstorm\Brainstorm.Data\obj\Debug\net8.0\Brainstorm.Data.csproj.AssemblyReference.cache
+C:\CODE\C#\brainstorm\Brainstorm.Data\obj\Debug\net8.0\Brainstorm.Data.GeneratedMSBuildEditorConfig.editorconfig
+C:\CODE\C#\brainstorm\Brainstorm.Data\obj\Debug\net8.0\Brainstorm.Data.AssemblyInfoInputs.cache
+C:\CODE\C#\brainstorm\Brainstorm.Data\obj\Debug\net8.0\Brainstorm.Data.AssemblyInfo.cs
+C:\CODE\C#\brainstorm\Brainstorm.Data\obj\Debug\net8.0\Brainstorm.Data.csproj.CoreCompileInputs.cache
+C:\CODE\C#\brainstorm\Brainstorm.Data\obj\Debug\net8.0\Brainstorm.Data.sourcelink.json
+C:\CODE\C#\brainstorm\Brainstorm.Data\obj\Debug\net8.0\Brainstorm.Data.dll
+C:\CODE\C#\brainstorm\Brainstorm.Data\obj\Debug\net8.0\refint\Brainstorm.Data.dll
+C:\CODE\C#\brainstorm\Brainstorm.Data\obj\Debug\net8.0\Brainstorm.Data.pdb
+C:\CODE\C#\brainstorm\Brainstorm.Data\obj\Debug\net8.0\Brainstorm.Data.genruntimeconfig.cache
+C:\CODE\C#\brainstorm\Brainstorm.Data\obj\Debug\net8.0\ref\Brainstorm.Data.dll
