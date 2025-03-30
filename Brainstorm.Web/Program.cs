@@ -9,7 +9,6 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-builder.Logging.AddSimpleConsole(options =>
 builder.Services.AddDbContext<BrainstormDbContext>(options =>
 {
     options.UseSqlite(
@@ -72,7 +71,7 @@ app.Map("home/canvas/{sessionId}/ws", async (HttpContext context, string session
 });
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}"
+    pattern: "{controller=Home}/{action=Session}/{id?}"
 );
 
 using (var scope = app.Services.CreateScope())

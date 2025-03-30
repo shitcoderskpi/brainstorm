@@ -19,6 +19,11 @@ public class HomeController : Controller
         return View();
     }
 
+    public IActionResult Canvas()
+    {
+        return View();
+    }
+
     public IActionResult Session()
     {
         _logger.LogDebug("Loading new session page");
