@@ -18,6 +18,13 @@ builder.Services.AddDbContext<BrainstormDbContext>(options =>
 });
 
 builder.Services.AddScoped<UserRepository>();
+builder.Services.AddDbContext<BrainstormDbContext>(o =>
+{
+    o.UseSqlite("Data Source=brainstorm.db;Cache=Shared;Mode=ReadWriteCreate");
+});
+
+builder.Services.AddScoped<UserRepository>();
+builder.Services.AddControllersWithViews();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o =>

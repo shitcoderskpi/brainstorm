@@ -43,26 +43,6 @@ namespace Brainstorm.Web.Controllers
         [HttpGet]
         public IActionResult AccessDenied() { return Content("Access Denied"); }
 
-        [HttpPost]
-        [Route("api/Users/register")]
-        public async Task<IActionResult> Register(string login, string password)
-        {
-            var existingUser = await _repo.GetUserByLoginAsync(login);
-            if (existingUser != null)
-            {
-                return BadRequest("User already exists");
-            }
-
-            var user = new User
-            {
-                Login = login,
-                PasswordHash = Hash(password)
-            };
-
-            await _repo.AddUserAsync(user);
-            return Ok();
-        }
-
         string Hash(string p)
         {
             using var sha = SHA256.Create();
