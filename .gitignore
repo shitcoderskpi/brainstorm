@@ -1,8 +1,7 @@
-bin/
-obj/
-/packages/
-riderModule.iml
-/_ReSharper.Caches/
-/publish
-/.idea
-/node_modules
+/src/.idea/
+/src/Brainstorm.Data/bin
+/src/Brainstorm.Data/obj
+/src/Brainstorm.Testing/bin
+/src/Brainstorm.Testing/obj
+/src/Brainstorm.Web/bin
+/src/Brainstorm.Web/obj

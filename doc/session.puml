@@ -1,0 +1,25 @@
+@startuml
+
+actor Users as US
+participant "Client" as CL
+participant "Canvas" as CA
+participant "Websocket" as WS
+
+loop Canvas loop
+
+US -> CL: Changes canvas
+CL -> CA: Update canvas
+CA -> WS: Send changes via WebSocket
+WS -> WS: Validate session
+
+    alt Session valid
+        WS -> CA: Broadcast changes
+        CA -> CL: Update canvas
+        CA -> US: Show changes
+    else Session invalid
+        WS -> CL: Session error
+        CL -> US: Show error message
+    end
+end
+
+@enduml

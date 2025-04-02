@@ -1,0 +1,13 @@
+name: Deploy to XEON_server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Site updating
+        run: cmd /c C:\run.bat
