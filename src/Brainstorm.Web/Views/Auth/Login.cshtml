@@ -1,5 +1,5 @@
 @{
-    Layout = null;
+    ViewData["Title"] = "login";
 }
 <!DOCTYPE html>
 <html lang="uk">
@@ -58,6 +58,7 @@
         #loginResult {
             margin-top: 15px;
             font-weight: bold;
+            color: #ff4444;
         }
         .gif-container {
             margin-top: 20px;
@@ -91,18 +92,25 @@
         formData.append("password", password);
 
         try {
-            const r = await fetch("/Auth/Login", {
+            const response = await fetch("/Auth/Login", {
                 method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: formData.toString()
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Accept": "text/plain"
+                },
+                body: formData.toString(),
+                credentials: "include"
             });
-            if (r.ok) {
+
+            if (response.ok) {
                 window.location.href = "/Home/Index";
             } else {
-                document.getElementById("loginResult").innerText = await r.text();
+                const errorText = await response.text();
+                document.getElementById("loginResult").innerText = errorText;
             }
         } catch (err) {
-            document.getElementById("loginResult").innerText = err;
+            document.getElementById("loginResult").innerText = "Помилка підключення до сервера";
+            console.error(err);
         }
     });
 </script>

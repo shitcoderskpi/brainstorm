@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using Brainstorm.Data;
-using System.Threading.Tasks;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -17,7 +16,12 @@ namespace Brainstorm.Web.Controllers
         [HttpGet]
         public IActionResult Login()
         {
-            return View("~/Views/Home/Login.cshtml");
+            return View();
+        }
+
+        public IActionResult Register()
+        {
+            return View();
         }
 
         [HttpPost]

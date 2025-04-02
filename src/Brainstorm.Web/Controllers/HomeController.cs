@@ -15,7 +15,6 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
-        _logger.LogDebug("Loading canvas page");
         return View();
     }
 
