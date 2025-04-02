@@ -1,9 +1,12 @@
 const $ = (id) => document.getElementById(id);
 // SUSPICIOUS!!!!!!!
 // PAY ATTENTION IF DOES NOT WORK!!!!!!!!!!!!!!
-const current_location = window.location; // <- this
-console.log(current_location.toString().replace("http://", "ws://") + "/ws") // <- and this
-const socket = new WebSocket(current_location.toString().replace("http://", "ws://") + "/ws"); // <- also this
+
+// Get the current session ID from the URL
+const sessionId = window.location.pathname.split('/').pop();
+const wsUrl = `wss://dehobitto.xyz/home/canvas/${sessionId}/ws`;
+console.log("Connecting to WebSocket:", wsUrl);
+const socket = new WebSocket(wsUrl);
 
 // consts size
 const viewWidth = window.innerWidth * 0.98;
