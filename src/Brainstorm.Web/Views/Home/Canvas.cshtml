@@ -15,7 +15,8 @@ ViewData["Title"] = "canvas";
 </head>
 
 <body>
-
+    <canvas id="grid"></canvas>
+    <script src="/js/grid.js"></script>
 <div id="canvas-related">
     <div id="ui-toolbar">
         <button id="set-cursor-style">1</button>
@@ -23,10 +24,19 @@ ViewData["Title"] = "canvas";
         <button id="set-delete-style">3</button>
             <input type="color" id="color-picker" value="#000000">
             <input type="text"  id="color-input"  value="#000000">
+        <button id="create-square">Square</button>
+        <button id="create-rectangle">Rectangle</button>
+        <button id="create-circle">Circle</button>
+        <button id="create-triangle">Triangle</button>
+        <button id="create-parallelogram">Parallelogram</button>
+        <button id="create-trapezoid">Trapezoid</button>
+        <button id="create-star">Star</button>
+        <button id="create-hexagon">Hexagon</button>
+        <button id="create-pentagon">Pentagon</button>
+        <button id="create-rhombus">Rhombus</button>
     </div>
       <canvas id="canvas"></canvas>
-      <script src="/js/canvas.js"></script>
-
+      <script src="/js/canvas.js" ></script>
 </div>
 </body>
 </html>

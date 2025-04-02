@@ -1,14 +1,15 @@
 const gridCanvas = document.getElementById("grid");   // Get canvas
-gridCanvas.width = window.innerWidth * 0.98;        // Canvas almost fullscreen
-gridCanvas.height = window.innerHeight * 0.95;      // Maybe change multipls
+gridCanvas.width = window.innerWidth * 0.99;        // Canvas almost fullscreen
+gridCanvas.height = window.innerHeight * 0.97;      // Maybe change multipls
 const ctxCanvas = gridCanvas.getContext('2d');  // Get context for canvasAPI
 
 drawGrid();
 
-function drawGrid() {
+function drawGrid()
+{
     let s = 35;
-    let pL = 0;
-    let pT = 0;
+    let pL = 7;
+    let pT = 13;
     let pR = 0;
     let pB = 0;
     
