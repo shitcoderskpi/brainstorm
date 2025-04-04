@@ -10,13 +10,13 @@ is a collaborative platform designed to help teams generate and discuss ideas in
  - Accounts 👤
  - Database 📚
  - Room structure 🏠
+ - Homepage 🌍
+ - Basic shapes on canvas ✪
  - Login page 🔑
    
 ## 🔮 Upcoming features
 - Media support in canvas 🎥
 - Different colors, styles of drawing 🎨
-- Basic shapes on canvas ✪
-- Homepage 🌍
 - Chat??? 💬
 
 ## 🎉 Getting Started

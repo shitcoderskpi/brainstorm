@@ -1,0 +1,29 @@
+@startuml
+actor User
+participant "Frontend" as FE
+participant "Server" as BE
+
+User -> FE: Open login page, enter data
+
+alt Register
+    User -> FE: Submit registration
+    FE -> BE: Send registration data
+    BE -> BE: Create new user
+    BE -> FE: Registration success or failure
+end
+
+User -> FE: Submit login
+FE -> BE: Send login credentials
+BE -> BE: Verify credentials
+
+alt Successful login
+    BE -> FE: Send session token
+    FE -> User: Login successful
+    FE -> FE: Redirect to dashboard
+else Error
+    BE -> FE: Send error message
+    FE -> User: Show error
+end
+
+User -> FE: Draw, have fun!
+@enduml

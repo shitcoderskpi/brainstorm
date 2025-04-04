@@ -1,9 +1,12 @@
 const $ = (id) => document.getElementById(id);
 // SUSPICIOUS!!!!!!!
 // PAY ATTENTION IF DOES NOT WORK!!!!!!!!!!!!!!
-const current_location = window.location; // <- this
-console.log(current_location.toString().replace("http://", "ws://") + "/ws") // <- and this
-const socket = new WebSocket(current_location.toString().replace("http://", "ws://") + "/ws"); // <- also this
+
+// Get the current session ID from the URL
+const sessionId = window.location.pathname.split('/').pop();
+const wsUrl = `wss://dehobitto.xyz/home/canvas/${sessionId}/ws`;
+console.log("Connecting to WebSocket:", wsUrl);
+const socket = new WebSocket(wsUrl);
 
 // consts size
 const viewWidth = window.innerWidth * 0.98;
@@ -18,7 +21,7 @@ const canvas = new fabric.Canvas($('canvas'), {
 
 // clear padding
 const canvasWrapper = canvas.wrapperEl;
-canvasWrapper.style.position = 'initial'; 
+canvasWrapper.style.position = 'initial';
 canvasWrapper.style.margin = '0';
 
 // create brush
@@ -45,12 +48,14 @@ function findObject(id) {
 $("set-pencil-style").onclick = function () {
     console.log("Pencil mode");
 
+
     deleteModeActive = false;
     canvas.isDrawingMode = true;
 }
 
 $("set-cursor-style").onclick = function () {
     console.log("Moving mode");
+
 
     deleteModeActive = false;
     canvas.isDrawingMode = false;
@@ -87,14 +92,14 @@ canvas.on('object:modified', function (e) {
 canvas.on('path:created', function (e) {
     const newId = crypto.randomUUID();
     e.path.set({ id: newId });
-    
+
     console.log(newId, " assigned to", e.path);
-    
+
     const pathData = e.path.toObject();
-    
+
     console.log(pathData.id, " sent");
     console.log(e.path.id, " drawn");
-    
+
     sendDrawingData(pathData);
 });
 
@@ -130,7 +135,7 @@ canvas.on('mouse:down', function (event)
 // socket handler, pretty understandable
 socket.onmessage = function (event) {
     const message = JSON.parse(event.data);
-    
+
     console.log("Got a message ", message.type);
     console.log(message);
 
@@ -148,12 +153,12 @@ socket.onmessage = function (event) {
             scaleX: message.scaleX,
             scaleY: message.scaleY
         });
-        
+
         console.log(
             message.type, " type",
             message.id, " id request",
             movedObject.id, " id response");
-        
+
         // need to redraw when changed
         canvas.renderAll();
     }else if(message.type === 'drawing')
@@ -172,7 +177,7 @@ socket.onmessage = function (event) {
             message.type, " type",
             message.id, " id sent",
             path.id, " id got");
-        
+
         canvas.add(path);
         canvas.renderAll();
     }
@@ -207,7 +212,29 @@ function sendMoveData(data) {
         data: data
     }));
 }
+const initSmoothControls = () => {
+    let isDragging = false;
+    let lastX = 0;
+    let lastY = 0;
+    let isAltPressed = false;
+    
+    const handleKeyDown = (e) => {
+        if (e.key === 'Alt' && !e.repeat) {
+            isAltPressed = true;
+            canvas.selection = false;
+            canvas.defaultCursor = 'grab';
+            e.preventDefault();
+        }
+    };
 
+    const handleKeyUp = (e) => {
+        if (e.key === 'Alt') {
+            isAltPressed = false;
+            canvas.selection = true;
+            canvas.defaultCursor = 'default';
+            e.preventDefault();
+        }
+    };
 function sendDeleteData(objectIds)
 {
     socket.send(JSON.stringify({
@@ -524,3 +551,47 @@ function rhombus(pointer, id)
         id: id
     });
 }
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+    
+    canvas.on('mouse:wheel', function(opt) {
+        opt.e.preventDefault();
+        const delta = -Math.sign(opt.e.deltaY) * 0.1; // Увеличенный коэффициент
+        const zoomFactor = 1.2; // Более агрессивный множитель зума
+
+        const newZoom = delta > 0
+            ? canvas.getZoom() * zoomFactor
+            : canvas.getZoom() / zoomFactor;
+
+        const clampedZoom = Math.min(50, Math.max(0.1, newZoom));
+
+        canvas.zoomToPoint({
+            x: opt.e.offsetX,
+            y: opt.e.offsetY
+        }, clampedZoom);
+    });
+    
+    canvas.on('mouse:down', (opt) => {
+        if (isAltPressed && opt.e.button === 0) {
+            isDragging = true;
+            lastX = opt.e.clientX;
+            lastY = opt.e.clientY;
+            canvas.defaultCursor = 'grabbing';
+            opt.e.preventDefault();
+        }
+    });
+    
+    canvas.on('mouse:up', () => {
+        if (isDragging) {
+            isDragging = false;
+            canvas.defaultCursor = isAltPressed ? 'grab' : 'default';
+        }
+    });
+    
+    canvas.wrapperEl.addEventListener('contextmenu', (e) => {
+        if (isAltPressed) e.preventDefault();
+    });
+};
+
+initSmoothControls();

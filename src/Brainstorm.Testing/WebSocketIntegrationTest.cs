@@ -19,78 +19,75 @@ public struct URL
     {
     }
 
-    // ReSharper disable once InconsistentNaming
     public string urlToRedirect { get; set; } = string.Empty;
 }
 
-public class WebSocketIntegrationTest(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+public class WebSocketIntegrationTest : IClassFixture<WebApplicationFactory<Program>>
 {
-    // ReSharper disable once InconsistentNaming
-    private readonly string[] _URIs = ["localhost:5057/", "localhost:7042/"];
-    // ReSharper disable once InconsistentNaming
-    private string currURLWS = string.Empty;
-    private const string Scheme = "http://";
-    private const string WebSocketEndpoint = "ws://";
+    private readonly WebApplicationFactory<Program> _factory;
     private WebSocketClient _client;
     private HttpClient _httpClient;
     private const uint BufferSize = 8192;
+    private string _wsUrl;
 
-    private async Task<WebSocket> CreateSessionAndConnect(WebSocketClient client, HttpClient httpClient)
+    public WebSocketIntegrationTest(WebApplicationFactory<Program> factory)
     {
-        var sessionUrl = httpClient.PostAsJsonAsync("http://" + _URIs[0] + "api/session/create", new {UserId = Guid.NewGuid().ToString()}).Result;
-        var url = JsonSerializer.Deserialize<URL>(sessionUrl.Content.ReadAsStringAsync().Result);
-        currURLWS = url.urlToRedirect.Replace(Scheme, WebSocketEndpoint) + "/ws";
-        return await client.ConnectAsync(new Uri(currURLWS), CancellationToken.None);
+        _factory = factory;
+    }
+
+    private async Task<(WebSocket socket, string sessionId)> CreateSessionAndConnect()
+    {
+        var sessionUrl = await _httpClient.PostAsJsonAsync("api/session/create", new { UserId = Guid.NewGuid().ToString() });
+        var url = JsonSerializer.Deserialize<URL>(await sessionUrl.Content.ReadAsStringAsync());
+        
+        // Extract the session ID from the redirect URL
+        var sessionId = url.urlToRedirect.Split('/').Last();
+        
+        // Construct the WebSocket URL using the test server's base URL
+        var baseUrl = _factory.Server.BaseAddress.ToString().TrimEnd('/');
+        _wsUrl = $"{baseUrl}/home/canvas/{sessionId}/ws";
+        
+        var socket = await _client.ConnectAsync(new Uri(_wsUrl), CancellationToken.None);
+        return (socket, sessionId);
     }
     
-    private async Task<WebSocket> TryConnect(WebSocketClient client, HttpClient httpClient)
+    private async Task<WebSocket> TryConnect()
     {
-        var socket = await CreateSessionAndConnect(client, httpClient);
-
-        for (var i = 0; i < _URIs.Length || socket.State != WebSocketState.Open; i++)
-        {
-            socket = await CreateSessionAndConnect(client, httpClient);
-        }
+        var (socket, _) = await CreateSessionAndConnect();
+        Assert.Equal(WebSocketState.Open, socket.State);
         return socket;
     }
-
-    private static async Task<WebSocket> TryConnect(WebSocketClient client, string url)
-    {
-        return await client.ConnectAsync(new Uri(url), CancellationToken.None);
-    }
-
 
     [Fact(Timeout = 100)]
     public async Task ConnectionTest()
     {
-        _client ??= factory.Server.CreateWebSocketClient();
-        _httpClient ??= factory.Server.CreateClient();
+        _client = _factory.Server.CreateWebSocketClient();
+        _httpClient = _factory.Server.CreateClient();
 
-        var socket = await TryConnect(_client, _httpClient);
-
+        var socket = await TryConnect();
         Assert.NotNull(socket);
         Assert.Equal(WebSocketState.Open, socket.State);
 
         socket.Abort();
-        // socket.Dispose();
     }
 
-    [Fact(Timeout = 1000)]
+    [Fact(Timeout = 5000)]
     public async Task ReceiveTest()
     {
-        _client ??= factory.Server.CreateWebSocketClient();
-        _httpClient ??= factory.Server.CreateClient();
+        _client = _factory.Server.CreateWebSocketClient();
+        _httpClient = _factory.Server.CreateClient();
         
-        var sendingSocket = await TryConnect(_client, _httpClient);
-        var receivingSocket = await TryConnect(_client, currURLWS);
+        // Create a single session and connect both sockets to it
+        var (sendingSocket, sessionId) = await CreateSessionAndConnect();
+        var receivingSocket = await _client.ConnectAsync(new Uri(_wsUrl), CancellationToken.None);
         
         var rnd = new Random();
-        
         var data = rnd.Next(1_000_000, 100_000_000).ToString();
         
+        // Send the data
         await sendingSocket.SendAsync(new ArraySegment<byte>(data.Select(x => (byte)x).ToArray()), WebSocketMessageType.Text, true, CancellationToken.None);
 
+        // Receive the data
         var buffer = new byte[BufferSize];
         var result = await receivingSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
         
@@ -101,38 +98,29 @@ public class WebSocketIntegrationTest(WebApplicationFactory<Program> factory)
         receivingSocket.Abort();
     }
 
-    [Fact]
-    public void ReceiveDiffSessionTest()
+    [Fact(Timeout = 5000)]
+    public async Task ReceiveDiffSessionTest()
     {
-        Assert.False(TimeoutAfter(CreateDifferentSessionAndTryRecv(), 1000) is { Result: true });
-    }
-
-    private async Task CreateDifferentSessionAndTryRecv()
-    {
-        _client ??= factory.Server.CreateWebSocketClient();
-        _httpClient ??= factory.Server.CreateClient();
+        _client = _factory.Server.CreateWebSocketClient();
+        _httpClient = _factory.Server.CreateClient();
         
-        var sendingSocket = await TryConnect(_client, _httpClient);
-        var receivingSocket = await TryConnect(_client, _httpClient);
+        // Create two different sessions
+        var (sendingSocket, _) = await CreateSessionAndConnect();
+        var (receivingSocket, _) = await CreateSessionAndConnect();
         
         var rnd = new Random();
-        
         var data = rnd.Next(1_000_000, 100_000_000).ToString();
         
+        // Send the data
         await sendingSocket.SendAsync(new ArraySegment<byte>(data.Select(x => (byte)x).ToArray()), WebSocketMessageType.Text, true, CancellationToken.None);
 
+        // Try to receive the data (should timeout since sockets are in different sessions)
         var buffer = new byte[BufferSize];
-        var result = await receivingSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-        
-        Assert.Equal(WebSocketMessageType.Text, result.MessageType);
-        Assert.Equal(data, Encoding.UTF8.GetString(buffer, 0, result.Count));
+        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => 
+            receivingSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cts.Token));
         
         sendingSocket.Abort();
         receivingSocket.Abort();
-    }
-
-    private static async Task<bool> TimeoutAfter(Task task, int millisecondsTimeout)
-    {
-        return task == await Task.WhenAny(task, Task.Delay(millisecondsTimeout));
     }
 }

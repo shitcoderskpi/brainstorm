@@ -1,29 +1,47 @@
 @{
-ViewData["Title"] = "canvas";
+ViewData["Title"] = "Canvas";
 }
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/fabric@latest/dist/index.min.js"></script>
-    <script src="/lib/jquery/dist/jquery.min.js"></script>
-    <link rel="stylesheet" href="/css/canvas.css">
-</head>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <link rel="stylesheet" href="~/css/canvas.css">
+    <style>
 
-<body>
-    <canvas id="grid"></canvas>
-    <script src="/js/grid.js"></script>
-<div id="canvas-related">
-    <div id="ui-toolbar">
-        <button id="set-cursor-style">1</button>
-        <button id="set-pencil-style">2</button>
+        #ui-toolbar{
+            position: absolute;
+            z-index: 12;
+        }
+
+        .relative {
+            cursor: default !important;
+        }
+        .relative.grab {
+            cursor: grab !important;
+        }
+        .relative.grabbing {
+            cursor: grabbing !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen flex items-center justify-center">
+<div id="canvas-related" class="relative flex items-center">
+    <!-- Панель инструментов с иконками -->
+    <div id="ui-toolbar" class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-90 p-3 rounded-lg shadow-lg flex flex-col gap-3 z-10">
+        <button id="set-cursor-style" class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">
+            1
+        </button>
+        <button id="set-pencil-style" class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">
+            2
+        </button>
         <button id="set-delete-style">3</button>
-            <input type="color" id="color-picker" value="#000000">
-            <input type="text"  id="color-input"  value="#000000">
+        <input type="color" id="color-picker" value="#000000">
+        <input type="text"  id="color-input"  value="#000000">
         <button id="create-square">Square</button>
         <button id="create-rectangle">Rectangle</button>
         <button id="create-circle">Circle</button>
@@ -35,8 +53,17 @@ ViewData["Title"] = "canvas";
         <button id="create-pentagon">Pentagon</button>
         <button id="create-rhombus">Rhombus</button>
     </div>
-      <canvas id="canvas"></canvas>
-      <script src="/js/canvas.js" ></script>
+
+    <!-- Canvas с точечным фоном и толстой рамкой -->
+    <div class="relative" id="divcanvas">
+        <canvas id="grid-shader" class="z-0 absolute top-0 left-0" width="800" height="600"></canvas>
+        <canvas id="canvas" class="border-4 border-gray-500 rounded-2xl absolute z-10 top-0 left-0" width="800" height="600"></canvas>
+        <div class="dot-pattern rounded-2xl"></div>
+    </div>
+
+    
+    <script src="~/js/canvas.js"></script>
+    <script src="~/js/glcanvas.js"></script>
 </div>
 </body>
 </html>

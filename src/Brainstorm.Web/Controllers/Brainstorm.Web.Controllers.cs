@@ -2,7 +2,6 @@ using Brainstorm.Data;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Brainstorm.Web.Controllers
 {
