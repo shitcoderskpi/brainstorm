@@ -31,7 +31,6 @@ ViewData["Title"] = "Canvas";
 </head>
 <body class="bg-gray-100 h-screen flex items-center justify-center">
 <div id="canvas-related" class="relative flex items-center">
-    <!-- Панель инструментов с иконками -->
     <div id="ui-toolbar" class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-90 p-3 rounded-lg shadow-lg flex flex-col gap-3 z-10">
         <button id="set-cursor-style" class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">
             1
@@ -39,22 +38,21 @@ ViewData["Title"] = "Canvas";
         <button id="set-pencil-style" class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">
             2
         </button>
-        <button id="set-delete-style">3</button>
-        <input type="color" id="color-picker" value="#000000">
-        <input type="text"  id="color-input"  value="#000000">
-        <button id="create-square">Square</button>
-        <button id="create-rectangle">Rectangle</button>
-        <button id="create-circle">Circle</button>
-        <button id="create-triangle">Triangle</button>
-        <button id="create-parallelogram">Parallelogram</button>
-        <button id="create-trapezoid">Trapezoid</button>
-        <button id="create-star">Star</button>
-        <button id="create-hexagon">Hexagon</button>
-        <button id="create-pentagon">Pentagon</button>
-        <button id="create-rhombus">Rhombus</button>
+        <button id="set-delete-style" class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">3</button>
+        <input type="color" id="color-picker" value="#000000" class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">
+        <input type="text"  id="color-input"  value="#000000" class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">
+        <button id="create-square" class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">Square</button>
+        <button id="create-rectangle" class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">Rectangle</button>
+        <button id="create-circle" class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">Circle</button>
+        <button id="create-triangle" class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">Triangle</button>
+        <button id="create-parallelogram" class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">Parallelogram</button>
+        <button id="create-trapezoid" class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">Trapezoid</button>
+        <button id="create-star" class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">Star</button>
+        <button id="create-hexagon" class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">Hexagon</button>
+        <button id="create-pentagon" class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">Pentagon</button>
+        <button id="create-rhombus" class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">Rhombus</button>
     </div>
-
-    <!-- Canvas с точечным фоном и толстой рамкой -->
+    
     <div class="relative" id="divcanvas">
         <canvas id="grid-shader" class="z-0 absolute top-0 left-0" width="800" height="600"></canvas>
         <canvas id="canvas" class="border-4 border-gray-500 rounded-2xl absolute z-10 top-0 left-0" width="800" height="600"></canvas>
