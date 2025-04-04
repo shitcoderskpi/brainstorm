@@ -1,4 +1,7 @@
 const $ = (id) => document.getElementById(id);
+// SUSPICIOUS!!!!!!!
+// PAY ATTENTION IF DOES NOT WORK!!!!!!!!!!!!!!
+
 // Get the current session ID from the URL
 const sessionId = window.location.pathname.split('/').pop();
 const wsUrl = `wss://dehobitto.xyz/home/canvas/${sessionId}/ws`;
@@ -11,7 +14,7 @@ const viewHeight = window.innerHeight * 0.95;
 
 // create fabric canvas
 const canvas = new fabric.Canvas($('canvas'), {
-    isDrawingMode: true,
+    isDrawingMode: false,
     width: viewWidth,
     height: viewHeight
 });
@@ -20,18 +23,6 @@ const canvas = new fabric.Canvas($('canvas'), {
 const canvasWrapper = canvas.wrapperEl;
 canvasWrapper.style.position = 'initial';
 canvasWrapper.style.margin = '0';
-
-// Get reference to the dot pattern element
-const dotPattern = document.querySelector('.dot-pattern');
-
-// Base grid size for the dot pattern
-const BASE_GRID_SIZE = 64;
-// Dot size in pixels
-const DOT_SIZE = 2; 
-// Zoom breakpoints where grid size changes
-const GRID_BREAKPOINTS = [0.25, 0.5, 1, 2, 4];
-// Gray color for dots
-const DOT_COLOR = "rgba(120, 120, 120, 0.2)";
 
 // create brush
 canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
@@ -109,7 +100,7 @@ socket.onmessage = function (event) {
         let movedObject = findObject(message.data.id);
 
         if (!movedObject) {
-            console.warn("Object with id", message.data.id, "not found");
+            console.warn("Объект с id", message.data.id, "не найден");
             return;
         }
 
@@ -162,112 +153,70 @@ function sendMoveData(data) {
         data: data
     }));
 }
-
-// Function to determine grid size based on zoom level (Figma-style)
-function getFigmaStyleGridSize(zoom) {
-    let gridSize = BASE_GRID_SIZE;
-
-    if (zoom <= GRID_BREAKPOINTS[0]) {
-        gridSize = BASE_GRID_SIZE * 4;
-    } else if (zoom <= GRID_BREAKPOINTS[1]) {
-        gridSize = BASE_GRID_SIZE * 2;
-    } else if (zoom <= GRID_BREAKPOINTS[2]) {
-        gridSize = BASE_GRID_SIZE;
-    } else if (zoom <= GRID_BREAKPOINTS[3]) {
-        gridSize = BASE_GRID_SIZE / 2;
-    } else if (zoom <= GRID_BREAKPOINTS[4]) {
-        gridSize = BASE_GRID_SIZE / 4;
-    } else {
-        gridSize = BASE_GRID_SIZE / 8;
-    }
-
-    // Ограничение минимального размера сетки
-    return Math.max(gridSize, 8);
-}
-
-// Function to update dot pattern in Figma style
-function updateDotPattern(zoom, vpt) {
-    const gridSize = getFigmaStyleGridSize(zoom);
-    const dotSize = Math.min(DOT_SIZE, DOT_SIZE * zoom);
-
-    dotPattern.style.backgroundImage = `radial-gradient(circle, ${DOT_COLOR} ${dotSize}px, transparent ${dotSize}px)`;
-    dotPattern.style.backgroundSize = `${gridSize}px ${gridSize}px`;
-
-    const offsetX = (vpt[4] / zoom) % gridSize;
-    const offsetY = (vpt[5] / zoom) % gridSize;
-
-    dotPattern.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
-}
-
-
-// Function to update dot pattern position
-function updateDotPatternPosition(vpt) {
-    const zoom = canvas.getZoom();
-    updateDotPattern(zoom, vpt);
-}
-
-canvas.on('mouse:down', function(opt) {
-    var evt = opt.e;
-    if (evt.altKey === true) {
-        this.isDragging = true;
-        this.isDrawingMode = false;
-        this.selection = false;
-        this.lastPosX = evt.clientX;
-        this.lastPosY = evt.clientY;
-    }
-});
-
-canvas.on('mouse:wheel', function(opt) {
-    var delta = opt.e.deltaY;
-    var zoom = canvas.getZoom();
-    zoom *= 0.999 ** delta;
-    if (zoom > 20) zoom = 20;
-    if (zoom < 0.01) zoom = 0.01;
-    canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
-    opt.e.preventDefault();
-    opt.e.stopPropagation();
-    var vpt = this.viewportTransform;
-    if (zoom < 400 / 1000) {
-        vpt[4] = 200 - 1000 * zoom / 2;
-        vpt[5] = 200 - 1000 * zoom / 2;
-    } else {
-        if (vpt[4] >= 0) {
-            vpt[4] = 0;
-        } else if (vpt[4] < canvas.getWidth() - 1000 * zoom) {
-            vpt[4] = canvas.getWidth() - 1000 * zoom;
+const initSmoothControls = () => {
+    let isDragging = false;
+    let lastX = 0;
+    let lastY = 0;
+    let isAltPressed = false;
+    
+    const handleKeyDown = (e) => {
+        if (e.key === 'Alt' && !e.repeat) {
+            isAltPressed = true;
+            canvas.selection = false;
+            canvas.defaultCursor = 'grab';
+            e.preventDefault();
         }
-        if (vpt[5] >= 0) {
-            vpt[5] = 0;
-        } else if (vpt[5] < canvas.getHeight() - 1000 * zoom) {
-            vpt[5] = canvas.getHeight() - 1000 * zoom;
+    };
+
+    const handleKeyUp = (e) => {
+        if (e.key === 'Alt') {
+            isAltPressed = false;
+            canvas.selection = true;
+            canvas.defaultCursor = 'default';
+            e.preventDefault();
         }
-    }
+    };
 
-    // Update dot grid when zoom changes
-    updateDotPattern(zoom, vpt);
-})
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+    
+    canvas.on('mouse:wheel', function(opt) {
+        opt.e.preventDefault();
+        const delta = -Math.sign(opt.e.deltaY) * 0.1; // Увеличенный коэффициент
+        const zoomFactor = 1.2; // Более агрессивный множитель зума
 
-canvas.on('mouse:move', function(opt) {
-    if (this.isDragging) {
-        var e = opt.e;
-        var vpt = this.viewportTransform;
-        vpt[4] += e.clientX - this.lastPosX;
-        vpt[5] += e.clientY - this.lastPosY;
+        const newZoom = delta > 0
+            ? canvas.getZoom() * zoomFactor
+            : canvas.getZoom() / zoomFactor;
 
-        // Update dot pattern position
-        updateDotPatternPosition(vpt);
+        const clampedZoom = Math.min(50, Math.max(0.1, newZoom));
 
-        this.requestRenderAll();
-        this.lastPosX = e.clientX;
-        this.lastPosY = e.clientY;
-    }
-});
+        canvas.zoomToPoint({
+            x: opt.e.offsetX,
+            y: opt.e.offsetY
+        }, clampedZoom);
+    });
+    
+    canvas.on('mouse:down', (opt) => {
+        if (isAltPressed && opt.e.button === 0) {
+            isDragging = true;
+            lastX = opt.e.clientX;
+            lastY = opt.e.clientY;
+            canvas.defaultCursor = 'grabbing';
+            opt.e.preventDefault();
+        }
+    });
+    
+    canvas.on('mouse:up', () => {
+        if (isDragging) {
+            isDragging = false;
+            canvas.defaultCursor = isAltPressed ? 'grab' : 'default';
+        }
+    });
+    
+    canvas.wrapperEl.addEventListener('contextmenu', (e) => {
+        if (isAltPressed) e.preventDefault();
+    });
+};
 
-canvas.on('mouse:up', function(opt) {
-    this.setViewportTransform(this.viewportTransform);
-    this.isDragging = false;
-    this.selection = true;
-});
-
-// Initialize dot pattern with default settings
-updateDotPattern(1, [1, 0, 0, 1, 0, 0]);
+initSmoothControls();
