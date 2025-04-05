@@ -557,8 +557,8 @@ function rhombus(pointer, id)
     
     canvas.on('mouse:wheel', function(opt) {
         opt.e.preventDefault();
-        const delta = -Math.sign(opt.e.deltaY) * 0.1; // Увеличенный коэффициент
-        const zoomFactor = 1.2; // Более агрессивный множитель зума
+        const delta = -Math.sign(opt.e.deltaY) * 0.1;
+        const zoomFactor = 1.2;
 
         const newZoom = delta > 0
             ? canvas.getZoom() * zoomFactor

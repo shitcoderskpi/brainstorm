@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
       varying vec2 v_uv;
 
       float gridLine(vec2 coord, float size, float thickness) {
-        vec2 line = abs(fract(coord / size) - 0.5);
+        vec2 line = abs(fract(coord / size));
         vec2 width = fwidth(coord / size);
         vec2 grid = line / width;
         float minLine = min(grid.x, grid.y);
@@ -39,17 +39,18 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       void main() {
-        vec2 coord = (v_uv * u_resolution - u_offset);
-        coord.y = u_resolution.y - coord.y;
+        vec2 pixelCoord = v_uv * u_resolution;
+        pixelCoord.y = u_resolution.y - pixelCoord.y;
+        vec2 coord = (pixelCoord - u_offset) / u_zoom;
     
-        float majorGrid = gridLine(coord, 100.0 * u_zoom, 1.0);
-        float minorGrid = gridLine(coord, 20.0 * u_zoom, 0.5);
+        float majorGrid = gridLine(coord, 100.0, 1.0);
+        float minorGrid = gridLine(coord, 25.0, 0.5);
         float grid = max(majorGrid, minorGrid * 0.5);
         
         vec3 bg = vec3(1.0);              
-        vec3 lineColor = vec3(0.6);       
-        gl_FragColor = vec4(mix(bg, lineColor, grid), 1.0);
-    }
+        vec3 lineColor = vec3(0.9);       
+        gl_FragColor = vec4(mix(bg, lineColor, grid), 1);
+      }
 
     `;
 
@@ -102,8 +103,8 @@ document.addEventListener("DOMContentLoaded", function () {
         gl.uniform1f(u_zoom, zoom);
         gl.uniform2f(u_resolution, gridCanvas.width, gridCanvas.height);
 
-        // Инвертируем координаты Y
-        gl.uniform2f(u_offset, vpt[4], gridCanvas.height - vpt[5]);
+        // Corrected: Use vpt[4] and vpt[5] directly
+        gl.uniform2f(u_offset, vpt[4], vpt[5]);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
@@ -135,8 +136,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         canvas.on('mouse:move', (opt) => {
             if (isDragging && isAltPressed) {
-                const deltaX = (opt.e.clientX - lastX) / canvas.getZoom();
-                const deltaY = (opt.e.clientY - lastY) / canvas.getZoom();
+                const deltaX = opt.e.clientX - lastX;
+                const deltaY = opt.e.clientY - lastY;
                 
                 canvas.relativePan({ x: deltaX, y: deltaY });
 
