@@ -128,7 +128,7 @@ canvas.on('mouse:down', function (event)
     {
         console.log("Delete object:", target.id);
         canvas.remove(target);
-        sendDeleteData([target.id]);
+        sendDeleteData(target.id);
     }
 });
 
@@ -212,6 +212,15 @@ function sendMoveData(data) {
         data: data
     }));
 }
+
+function sendDeleteData(objectIds)
+{
+    socket.send(JSON.stringify({
+        type: 'delete',
+        ids: objectIds
+    }));
+}
+
 const initSmoothControls = () => {
     let isDragging = false;
     let lastX = 0;
@@ -234,14 +243,7 @@ const initSmoothControls = () => {
             canvas.defaultCursor = 'default';
             e.preventDefault();
         }
-    };
-function sendDeleteData(objectIds)
-{
-    socket.send(JSON.stringify({
-        type: 'delete',
-        ids: objectIds
-    }));
-}
+    }
 
 const colorPicker = document.getElementById("color-picker");
 const colorInput = document.getElementById("color-input");
