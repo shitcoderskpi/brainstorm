@@ -20,6 +20,7 @@ jobs:
 
     - name: Restore, Build & Pack all .csproj
       run: |
+        cd src
         dotnet restore
         dotnet build --configuration Release
 
