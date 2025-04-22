@@ -555,23 +555,6 @@ function rhombus(pointer, id)
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
     
-    canvas.on('mouse:wheel', function(opt) {
-        opt.e.preventDefault();
-        const delta = -Math.sign(opt.e.deltaY) * 0.1;
-        const zoomFactor = 1.2;
-
-        const newZoom = delta > 0
-            ? canvas.getZoom() * zoomFactor
-            : canvas.getZoom() / zoomFactor;
-
-        const clampedZoom = Math.min(50, Math.max(0.1, newZoom));
-
-        canvas.zoomToPoint({
-            x: opt.e.offsetX,
-            y: opt.e.offsetY
-        }, clampedZoom);
-    });
-    
     canvas.on('mouse:down', (opt) => {
         if (isAltPressed && opt.e.button === 0) {
             isDragging = true;
