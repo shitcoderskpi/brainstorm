@@ -9,8 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OWNER: shitcoderskpi
-    steps:
 
+    steps:
     - uses: actions/checkout@v3
 
     - name: Setup .NET
@@ -18,32 +18,40 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
-    - name: Restore, Build & Pack all .csproj
+    - name: Restore & Build all projects
       run: |
-        cd src
+        echo "Рабочая папка: $PWD"
         dotnet restore
         dotnet build --configuration Release
 
-        # создаём папку для артефактов
-        mkdir -p artifacts/nuget
+    - name: Create artifacts folder
+      run: mkdir -p "$GITHUB_WORKSPACE/artifacts/nuget"
 
-        # проходим по каждому .csproj в репо
+    - name: Pack all .csproj
+      run: |
         for proj in $(find . -name '*.csproj'); do
+          echo "→ Packing $proj"
           dotnet pack "$proj" \
             --configuration Release \
-            --output artifacts/nuget
+            --output "$GITHUB_WORKSPACE/artifacts/nuget"
         done
 
     - name: Push NuGet packages
+      if: ${{ always() }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        for pkg in artifacts/nuget/*.nupkg; do
-          dotnet nuget push "$pkg" \
-            --source "https://nuget.pkg.github.com/$OWNER/index.json" \
-            --api-key $GITHUB_TOKEN \
-            --skip-duplicate
-        done
+        if [ -d "$GITHUB_WORKSPACE/artifacts/nuget" ] && ls "$GITHUB_WORKSPACE/artifacts/nuget"/*.nupkg 1> /dev/null 2>&1; then
+          for pkg in "$GITHUB_WORKSPACE/artifacts/nuget"/*.nupkg; do
+            echo "→ Pushing $pkg"
+            dotnet nuget push "$pkg" \
+              --source "https://nuget.pkg.github.com/$OWNER/index.json" \
+              --api-key $GITHUB_TOKEN \
+              --skip-duplicate
+          done
+        else
+          echo "No NuGet packages found, skipping push."
+        fi
 
     - name: Setup Node.js
       uses: actions/setup-node@v3
@@ -55,14 +63,15 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        for dir in $(find . -type f -name 'package.json' -not -path './node_modules/*' -printf '%h\n' | sort -u); do
-          echo "→ Processing $dir"
+        for dir in $(find . -type f -name 'package.json' \
+                      -not -path './node_modules/*' \
+                      -printf '%h\n' | sort -u); do
+          echo "→ Processing JS in $dir"
           cd "$dir"
 
           npm install
-          npm run build    # ваш скрипт сборки, если он есть
+          npm run build
           npm publish --access public
 
           cd - > /dev/null
         done
-                - name: Cache
