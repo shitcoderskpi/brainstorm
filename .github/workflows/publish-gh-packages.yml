@@ -20,7 +20,7 @@ jobs:
 
     - name: Restore & Build all projects
       run: |
-        echo "Рабочая папка: $PWD"
+        cd src
         dotnet restore
         dotnet build --configuration Release
 
