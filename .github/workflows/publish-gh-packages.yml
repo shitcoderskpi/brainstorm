@@ -1,0 +1,67 @@
+name: Build & Publish All Artifacts
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    env:
+      OWNER: shitcoderskpi
+    steps:
+
+    - uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '7.0.x'
+
+    - name: Restore, Build & Pack all .csproj
+      run: |
+        dotnet restore
+        dotnet build --configuration Release
+
+        # создаём папку для артефактов
+        mkdir -p artifacts/nuget
+
+        # проходим по каждому .csproj в репо
+        for proj in $(find . -name '*.csproj'); do
+          dotnet pack "$proj" \
+            --configuration Release \
+            --output artifacts/nuget
+        done
+
+    - name: Push NuGet packages
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        for pkg in artifacts/nuget/*.nupkg; do
+          dotnet nuget push "$pkg" \
+            --source "https://nuget.pkg.github.com/$OWNER/index.json" \
+            --api-key $GITHUB_TOKEN \
+            --skip-duplicate
+        done
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        registry-url: 'https://npm.pkg.github.com/'
+
+    - name: Build & Publish all JS packages
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        for dir in $(find . -type f -name 'package.json' -not -path './node_modules/*' -printf '%h\n' | sort -u); do
+          echo "→ Processing $dir"
+          cd "$dir"
+
+          npm install
+          npm run build    # ваш скрипт сборки, если он есть
+          npm publish --access public
+
+          cd - > /dev/null
+        done
+                - name: Cache
