@@ -25,7 +25,7 @@ jobs:
     - name: Restore & Build all projects
       run: |
         echo "Рабочая папка: $PWD"
-        dotnet restore
+        dotnet restore src
         dotnet build --configuration Release
 
     - name: Create artifacts folder
