@@ -554,25 +554,317 @@ function rhombus(pointer, id)
     });
 }
 
+const colorPicker = document.getElementById("color-picker");
+const colorInput = document.getElementById("color-input");
+
+colorPicker.addEventListener("input", function () {
+    colorInput.value = this.value;
+    canvas.freeDrawingBrush.color = this.value;
+});
+
+colorInput.addEventListener("input", function () {
+    if (/^#[0-9A-F]{6}$/i.test(this.value)) {
+        colorPicker.value = this.value;
+        canvas.freeDrawingBrush.color = this.value;
+    }
+});
+
+let selectedShape = null; 
+
+$("create-square").onclick = function ()
+{
+    console.log("Select square");
+    canvas.isDrawingMode = false;
+    deleteModeActive = false;
+    selectedShape = "square"; 
+}
+
+$("create-rectangle").onclick = function ()
+{
+    console.log("Select rectangle");
+    canvas.isDrawingMode = false;
+    deleteModeActive = false;
+    selectedShape = "rectangle";
+}
+
+$("create-circle").onclick = function ()
+{
+    console.log("Select circle");
+    canvas.isDrawingMode = false;
+    deleteModeActive = false;
+    selectedShape = "circle"; 
+}
+
+$("create-triangle").onclick = function ()
+{
+    console.log("Select triangle");
+    canvas.isDrawingMode = false;
+    deleteModeActive = false;
+    selectedShape = "triangle"; 
+}
+$("create-parallelogram").onclick = function ()
+{
+    console.log("Select parallelogram");
+    canvas.isDrawingMode = false;
+    deleteModeActive = false;
+    selectedShape = "parallelogram"; 
+}
+
+$("create-trapezoid").onclick = function ()
+{
+    console.log("Select trapezoid");
+    canvas.isDrawingMode = false;
+    deleteModeActive = false;
+    selectedShape = "trapezoid";
+}
+
+$("create-star").onclick = function ()
+{
+    console.log("Select star");
+    canvas.isDrawingMode = false;
+    deleteModeActive = false;
+    selectedShape = "star";
+}
+
+$("create-hexagon").onclick = function ()
+{
+    console.log("Select hexagon");
+    canvas.isDrawingMode = false;
+    deleteModeActive = false;
+    selectedShape = "hexagon";
+}
+
+$("create-pentagon").onclick = function ()
+{
+    console.log("Select pentagon");
+    canvas.isDrawingMode = false;
+    deleteModeActive = false;
+    selectedShape = "pentagon";
+}
+
+$("create-rhombus").onclick = function ()
+{
+    console.log("Select rhombus");
+    canvas.isDrawingMode = false;
+    deleteModeActive = false;
+    selectedShape = "rhombus";
+}
+
+canvas.on("mouse:down", function (event)
+{
+    if (!selectedShape) return; 
+
+    const pointer = canvas.getPointer(event.e); 
+    const id = crypto.randomUUID(); 
+    createShape(selectedShape, pointer, id);
+    selectedShape = null; 
+});
+
+function createShape(shapeType, pointer, id)
+{
+    let shape;
+    switch (shapeType)
+    {
+        case "square":
+            shape = square(pointer, id);
+            break;
+        case "rectangle":
+            shape = rectangle(pointer, id);
+            break;
+        case "circle":
+            shape = circle(pointer, id);
+            break;
+        case "triangle":
+            shape = triangle(pointer, id);
+            break;
+        case "parallelogram":
+            shape = parallelogram(pointer, id);
+            break;
+        case "trapezoid":
+            shape = trapezoid(pointer, id);
+            break;
+        case "star":
+            shape = star(pointer, id);
+            break;
+        case "hexagon":
+            shape = hexagon(pointer, id);
+            break;
+        case "pentagon":
+            shape = pentagon(pointer, id);
+            break;
+        case "rhombus":
+            shape = rhombus(pointer, id);
+            break;
+        default:
+            return;
+    }
+
+    if (shape)
+    {
+        canvas.add(shape);
+        canvas.renderAll();
+        sendDrawingData(shape.toObject());
+    }
+}
+
+function square(pointer, id)
+{
+    return new fabric.Rect({
+        left: pointer.x,
+        top: pointer.y,
+        width: 100,
+        height: 100,
+        fill: 'transparent',
+        stroke: 'black',
+        id: id
+    });
+}
+
+function rectangle(pointer, id)
+{
+    return new fabric.Rect({
+        left: pointer.x,
+        top: pointer.y,
+        width: 150,
+        height: 100,
+        fill: 'transparent',
+        stroke: 'black',
+        id: id
+    });
+}
+
+function circle(pointer, id)
+{
+    return new fabric.Circle({
+        left: pointer.x,
+        top: pointer.y,
+        radius: 50,
+        fill: 'transparent',
+        stroke: 'black',
+        id: id
+    });
+}
+
+function triangle(pointer, id)
+{
+    return new fabric.Triangle({
+        left: pointer.x,
+        top: pointer.y,
+        width: 100,
+        height: 100,
+        fill: 'transparent',
+        stroke: 'black',
+        id: id
+    });
+}
+function parallelogram(pointer, id)
+{
+    return new fabric.Polygon([
+        { x: pointer.x,       y: pointer.y       },
+        { x: pointer.x + 150, y: pointer.y       },
+        { x: pointer.x + 120, y: pointer.y + 100 },
+        { x: pointer.x - 30,  y: pointer.y + 100 }
+    ], {
+        fill: 'transparent',
+        stroke: 'black',
+        id: id
+    });
+}
+
+function trapezoid(pointer, id)
+{
+    return new fabric.Polygon([
+        { x: pointer.x,       y: pointer.y + 100 }, 
+        { x: pointer.x + 150, y: pointer.y + 100 }, 
+        { x: pointer.x + 120, y: pointer.y       }, 
+        { x: pointer.x + 30,  y: pointer.y       }
+    ], {
+        fill: 'transparent',
+        stroke: 'black',
+        id: id
+    });
+}
+
+function star(pointer, id)
+{
+    const points = [];
+    const outerRadius = 50;
+    const innerRadius = 25;
+    const numPoints = 10;
+
+    for (let i = 0; i < numPoints; i++)
+    {
+        const radius = i % 2 === 0 ? outerRadius : innerRadius;
+        const angle = (Math.PI / 5) * i;
+        const x = pointer.x + radius * Math.sin(angle);
+        const y = pointer.y - radius * Math.cos(angle);
+        points.push({ x: x, y: y });
+    }
+
+    return new fabric.Polygon(points,
+    {
+        fill: 'transparent',
+        stroke: 'black',
+        id: id
+    });
+}
+
+function hexagon(pointer, id)
+{
+    const sideLength = 50;
+    const points = [];
+    for (let i = 0; i < 6; i++)
+    {
+        points.push({
+            x: pointer.x + sideLength * Math.cos(i * Math.PI / 3),
+            y: pointer.y + sideLength * Math.sin(i * Math.PI / 3)
+        });
+    }
+    return new fabric.Polygon(points,
+    {
+        fill: 'transparent',
+        stroke: 'black',
+        id: id
+    });
+}
+
+function pentagon(pointer, id)
+{
+    const radius = 50;
+    const points = [];
+    for (let i = 0; i < 5; i++)
+    {
+        points.push({
+            x: pointer.x + radius * Math.cos(i * 2 * Math.PI / 5),
+            y: pointer.y + radius * Math.sin(i * 2 * Math.PI / 5)
+        });
+    }
+    const pentagon = new fabric.Polygon(points,
+    {
+        fill: 'transparent',
+        stroke: 'black',
+        id: id
+    });
+    pentagon.rotate(-90);
+    return pentagon;
+}
+
+function rhombus(pointer, id)
+{
+    return new fabric.Polygon([
+        { x: pointer.x, y: pointer.y - 50 },
+        { x: pointer.x + 50, y: pointer.y },
+        { x: pointer.x, y: pointer.y + 50 },
+        { x: pointer.x - 50, y: pointer.y }
+    ], {
+        fill: 'transparent',
+        stroke: 'black',
+        id: id
+    });
+}
+
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
-    
-    canvas.on('mouse:wheel', function(opt) {
-        opt.e.preventDefault();
-        const delta = -Math.sign(opt.e.deltaY) * 0.1; // Увеличенный коэффициент
-        const zoomFactor = 1.2; // Более агрессивный множитель зума
-
-        const newZoom = delta > 0
-            ? canvas.getZoom() * zoomFactor
-            : canvas.getZoom() / zoomFactor;
-
-        const clampedZoom = Math.min(50, Math.max(0.1, newZoom));
-
-        canvas.zoomToPoint({
-            x: opt.e.offsetX,
-            y: opt.e.offsetY
-        }, clampedZoom);
-    });
     
     canvas.on('mouse:down', (opt) => {
         if (isAltPressed && opt.e.button === 0) {

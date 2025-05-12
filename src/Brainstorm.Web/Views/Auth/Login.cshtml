@@ -103,10 +103,11 @@
             });
 
             if (response.ok) {
+                localStorage.setItem("token", response.token);
+                localStorage.setItem("login", login.toString());
                 window.location.href = "/Home/Index";
             } else {
-                const errorText = await response.text();
-                document.getElementById("loginResult").innerText = errorText;
+                document.getElementById("loginResult").innerText = await response.text();
             }
         } catch (err) {
             document.getElementById("loginResult").innerText = "Помилка підключення до сервера";
