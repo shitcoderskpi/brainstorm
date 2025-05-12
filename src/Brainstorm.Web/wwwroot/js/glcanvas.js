@@ -39,7 +39,7 @@ const float FADE_RANGE = 0.7;
 
 // Constants to control grid line visibility
 const float MIN_LINE_WIDTH_PIXELS = 1.0;
-const float MAX_GRID_DENSITY = 10.0;  // Maximum number of grid lines per screen
+const float MAX_GRID_DENSITY = 100.0;  // Maximum number of grid lines per screen
 
 vec2 worldCoord() {
     vec2 pixelCoord = v_uv * u_resolution;
@@ -88,7 +88,7 @@ float fadeLevel(float targetSize) {
     float idealFade = smoothstep(1.0/(GRID_STEP*FADE_RANGE), GRID_STEP*FADE_RANGE, ratio);
     
     // Combine all fade factors
-    return clamp(idealFade * densityFade * sparseFade, 0.05, 1.0);
+    return clamp(idealFade * densityFade * sparseFade, 0.1, 1.0);
 }
 
 void main() {
