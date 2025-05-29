@@ -6,6 +6,9 @@
 
     <ItemGroup>
       <_ContentIncludedByDefault Remove="wwwroot\Images\My.gif" />
+      <_ContentIncludedByDefault Remove="Views\Shared\Error.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Shared\_Layout.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Shared\_ValidationScriptsPartial.cshtml" />
     </ItemGroup>
 
     <ItemGroup>

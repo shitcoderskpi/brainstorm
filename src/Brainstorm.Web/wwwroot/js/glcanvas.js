@@ -1,7 +1,9 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const gridCanvas = document.getElementById('grid-shader');
     const gl = gridCanvas.getContext('webgl');
     const ext = gl.getExtension('OES_standard_derivatives');
+    const inputX = document.getElementById("input-x");
+    const inputY = document.getElementById("input-y");
+    updateInputsFromCanvas();
     if (!ext) {
         console.warn('OES_standard_derivatives not supported');
     }
@@ -196,6 +198,9 @@ void main() {
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
 
+    let canvasOffsetX = 0;
+    let canvasOffsetY = 0;
+    
     const initControls = () => {
         let isDragging = false;
         let lastX = 0;
@@ -229,6 +234,8 @@ void main() {
 
                 lastX = opt.e.clientX;
                 lastY = opt.e.clientY;
+
+                updateInputsFromCanvas();
                 updateGrid();
             }
         });
@@ -256,6 +263,8 @@ void main() {
             opt.e.preventDefault();
             opt.e.stopPropagation();
 
+            updateInputsFromCanvas();
+
             updateGrid();
         });
     };
@@ -263,4 +272,49 @@ void main() {
     initControls();
     canvas.on('after:render', updateGrid);
     updateGrid();
+
+    
+
+// Функция обновления input'ов
+    function updateInputsFromCanvas() {
+        const vpt = canvas.viewportTransform;
+        const zoom = canvas.getZoom();
+
+        // Центр экрана в мировых координатах
+        const centerX = (canvas.width / 2 - vpt[4]) / zoom;
+        const centerY = (canvas.height / 2 - vpt[5]) / zoom;
+
+        inputX.value = centerX.toFixed(0);
+        inputY.value = centerY.toFixed(0);
+    }
+
+
+// Отслеживание ручного изменения координат
+    inputX.addEventListener("change", () => {
+        canvasOffsetX = parseFloat(inputX.value);
+        updateCanvasPosition()
+    });
+    inputY.addEventListener("change", () => {
+        canvasOffsetY = parseFloat(inputY.value);
+        updateCanvasPosition()
+    });
+
+    function updateCanvasPosition() {
+        const zoom = canvas.getZoom();
+
+        const centerX = parseFloat(inputX.value);
+        const centerY = parseFloat(inputY.value);
+
+        const vpt = canvas.viewportTransform;
+
+        // Смещаем так, чтобы указанные координаты стали центром экрана
+        vpt[4] = canvas.width / 2 - centerX * zoom;
+        vpt[5] = canvas.height / 2 - centerY * zoom;
+
+        canvas.setViewportTransform(vpt);
+        updateGrid();
+        canvas.requestRenderAll();
+    }
+
+
 });
