@@ -16,12 +16,12 @@ document.addEventListener("DOMContentLoaded", function () {
     window.addEventListener('resize', initSizes);
 
     const vertexShaderSrc = `
-      attribute vec2 a_position;
-      varying vec2 v_uv;
-      void main() {
-        v_uv = a_position * 0.5 + 0.5;
-        gl_Position = vec4(a_position, 0, 1);
-      }
+attribute vec2 a_position;
+varying vec2 v_uv;
+void main() {
+v_uv = a_position * 0.5 + 0.5;
+gl_Position = vec4(a_position, 0, 1);
+}
     `;
 
     const fragmentShaderSrc = `
@@ -37,55 +37,92 @@ const float BASE_SIZE = 100.0;
 const float GRID_STEP = 4.0;
 const float FADE_RANGE = 0.7;
 
+// Constants to control grid line visibility
+const float MIN_LINE_WIDTH_PIXELS = 1.0;
+const float MAX_GRID_DENSITY = 100.0;  // Maximum number of grid lines per screen
+
 vec2 worldCoord() {
     vec2 pixelCoord = v_uv * u_resolution;
     pixelCoord.y = u_resolution.y - pixelCoord.y;
     return (pixelCoord - u_offset) / u_zoom;
 }
 
+// Improved grid line function with better pixel-perfect rendering
 float gridLine(vec2 coord, float size) {
     vec2 gridPos = coord / size;
-    vec2 fraction = fract(gridPos + 0.001);
+    vec2 fraction = fract(gridPos);
     vec2 dist = min(fraction, 1.0 - fraction);
     
-    // Фиксированная толщина в 1 пиксель
-    float thickness = 1.0 / (u_zoom * size);
+    // Convert back to pixel space to ensure consistent line width
+    vec2 dist_pixels = dist * size * u_zoom;
     
-    vec2 derivatives = fwidth(gridPos);
-    vec2 alpha = smoothstep(
-        dist - derivatives * 1.5,
-        dist + derivatives * 1.5,
-        vec2(thickness)
-    );
+    // Calculate pixel derivatives for line width adjustment
+    vec2 pixelWidth = fwidth(coord) * u_zoom;
     
-    return max(alpha.x, alpha.y);
+    // Ensure minimum visible line width in pixels
+    vec2 lineWidth = max(pixelWidth, vec2(MIN_LINE_WIDTH_PIXELS));
+    
+    // Create anti-aliased lines with consistent width
+    vec2 line = smoothstep(lineWidth, vec2(0.0), dist_pixels);
+    
+    return max(line.x, line.y);
 }
 
+// Enhanced fade level calculation that prevents disappearing lines
 float fadeLevel(float targetSize) {
-    // Инвертированная логика: затухание при отдалении
+    // Convert grid size to screen pixels
+    float gridPixelSize = targetSize * u_zoom;
+    
+    // Calculate grid density (how many grid cells fit in the screen)
+    float gridDensity = min(u_resolution.x, u_resolution.y) / gridPixelSize;
+    
+    // Fade out grids that are too dense
+    float densityFade = 1.0 - smoothstep(MAX_GRID_DENSITY * 0.5, MAX_GRID_DENSITY, gridDensity);
+    
+    // Fade out grids that are too sparse (cells larger than screen)
+    float sparseFade = smoothstep(0.2, 1.0, gridDensity);
+    
+    // Calculate how close this grid is to the "ideal" size for current zoom
     float currentSize = BASE_SIZE / u_zoom;
     float ratio = targetSize / currentSize;
-    return smoothstep(1.0/(GRID_STEP*FADE_RANGE), GRID_STEP*FADE_RANGE, ratio);
+    float idealFade = smoothstep(1.0/(GRID_STEP*FADE_RANGE), GRID_STEP*FADE_RANGE, ratio);
+    
+    // Combine all fade factors
+    return clamp(idealFade * densityFade * sparseFade, 0.1, 1.0);
 }
 
 void main() {
     vec2 coord = worldCoord();
     
     float sizes[5];
-    sizes[0] = BASE_SIZE / 16.0;  // 6.25  (visible at max zoom)
-    sizes[1] = BASE_SIZE / 4.0;   // 25    (mid zoom)
-    sizes[2] = BASE_SIZE;         // 100   (base)
-    sizes[3] = BASE_SIZE * 4.0;   // 400   (far)
-    sizes[4] = BASE_SIZE * 16.0;  // 1600  (very far)
+    sizes[0] = BASE_SIZE / 16.0;
+    sizes[1] = BASE_SIZE / 4.0;
+    sizes[2] = BASE_SIZE;
+    sizes[3] = BASE_SIZE * 4.0;
+    sizes[4] = BASE_SIZE * 16.0;
+    
+    // Define grid line colors - from lightest to darkest
+    vec3 gridColors[5];
+    gridColors[0] = vec3(0.85);  // Smallest grid
+    gridColors[1] = vec3(0.75);
+    gridColors[2] = vec3(0.65);  // Medium grid
+    gridColors[3] = vec3(0.55);
+    gridColors[4] = vec3(0.45);  // Largest grid
     
     vec3 color = vec3(1.0);
     
-    // Рисуем от мелкого к крупному
-    color = mix(color, vec3(0.8), gridLine(coord, sizes[0]) * fadeLevel(sizes[0]));
-    color = mix(color, vec3(0.7), gridLine(coord, sizes[1]) * fadeLevel(sizes[1]));
-    color = mix(color, vec3(0.6), gridLine(coord, sizes[2]) * fadeLevel(sizes[2]));
-    color = mix(color, vec3(0.5), gridLine(coord, sizes[3]) * fadeLevel(sizes[3]));
-    color = mix(color, vec3(0.3), gridLine(coord, sizes[4]) * fadeLevel(sizes[4]));
+    // Draw all grid levels with enhanced visibility
+    for (int i = 0; i < 5; i++) {
+        float lineIntensity = gridLine(coord, sizes[i]);
+        float fade = fadeLevel(sizes[i]);
+        
+        // Always draw at least a bit of each grid to avoid disappearing lines
+        // Use intensity and fade to modulate visibility
+        if (lineIntensity > 0.001) {
+            float alpha = lineIntensity * fade;
+            color = mix(color, gridColors[i], alpha);
+        }
+    }
     
     gl_FragColor = vec4(color, 1.0);
 }
