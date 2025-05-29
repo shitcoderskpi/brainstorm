@@ -4,20 +4,34 @@ const $ = (id) => document.getElementById(id);
 
 // Get the current session ID from the URL
 const sessionId = window.location.pathname.split('/').pop();
-const wsUrl = `wss://dehobitto.xyz/home/canvas/${sessionId}/ws`;
+const wsUrl = `wss://localhost:7042/home/canvas/${sessionId}/ws`;
 console.log("Connecting to WebSocket:", wsUrl);
 const socket = new WebSocket(wsUrl);
 
 // consts size
-const viewWidth = window.innerWidth * 0.98;
-const viewHeight = window.innerHeight * 0.95;
+const viewWidth = window.innerWidth;
+const viewHeight = window.innerHeight;
+
+const customCursor = '../../images/cursor24.png';
 
 // create fabric canvas
 const canvas = new fabric.Canvas($('canvas'), {
     isDrawingMode: false,
     width: viewWidth,
-    height: viewHeight
+    height: viewHeight,
+    freeDrawingCursor : `url(${customCursor}) 0 48, auto`,
 });
+const gridCanvas = document.getElementById('grid-shader');
+
+function resizeCanvas() {
+    canvas.width = viewWidth;
+    canvas.height = viewHeight;
+    gridCanvas.width = canvas.width;
+    gridCanvas.height = canvas.height;
+}
+
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('load', resizeCanvas);
 
 // clear padding
 const canvasWrapper = canvas.wrapperEl;
@@ -48,15 +62,13 @@ function findObject(id) {
 $("set-pencil-style").onclick = function () {
     console.log("Pencil mode");
 
-
     deleteModeActive = false;
     canvas.isDrawingMode = true;
 }
 
 $("set-cursor-style").onclick = function () {
     console.log("Moving mode");
-
-
+    
     deleteModeActive = false;
     canvas.isDrawingMode = false;
 }
@@ -148,10 +160,10 @@ socket.onmessage = function (event) {
         }
 
         movedObject.set({
-            left: message.left,
-            top: message.top,
-            scaleX: message.scaleX,
-            scaleY: message.scaleY
+            left: message.data.left,
+            top: message.data.top,
+            scaleX: message.data.scaleX,
+            scaleY: message.data.scaleY
         });
 
         console.log(
@@ -212,6 +224,15 @@ function sendMoveData(data) {
         data: data
     }));
 }
+
+function sendDeleteData(objectIds)
+{
+    socket.send(JSON.stringify({
+        type: 'delete',
+        ids: objectIds
+    }));
+}
+
 const initSmoothControls = () => {
     let isDragging = false;
     let lastX = 0;
@@ -235,13 +256,6 @@ const initSmoothControls = () => {
             e.preventDefault();
         }
     };
-function sendDeleteData(objectIds)
-{
-    socket.send(JSON.stringify({
-        type: 'delete',
-        ids: objectIds
-    }));
-}
 
 const colorPicker = document.getElementById("color-picker");
 const colorInput = document.getElementById("color-input");
